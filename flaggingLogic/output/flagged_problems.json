@@ -181,36 +181,36 @@
     "onset_day": 40,
     "window": {
       "from_day": 40,
-      "to_day": 51
+      "to_day": 50
     },
     "primary_metric": "silent_fail_rate",
     "metrics": {
       "silent_fail_rate": {
         "before": 0.0,
-        "during": 0.137805,
+        "during": 0.137154,
         "delta_pct": null
       },
       "error_rate": {
         "before": 0.015063,
-        "during": 0.015451,
-        "delta_pct": 0.0258
+        "during": 0.015531,
+        "delta_pct": 0.0311
       },
       "resolution_rate": {
         "before": 0.857486,
-        "during": 0.772329,
-        "delta_pct": -0.0993
+        "during": 0.776631,
+        "delta_pct": -0.0943
       },
       "median_turns": {
         "before": 3.928571,
-        "during": 3.791667,
-        "delta_pct": -0.0348
+        "during": 3.772727,
+        "delta_pct": -0.0397
       },
       "p50_latency": {
         "before": 246.428571,
-        "during": 236.166667
+        "during": 234.636364
       },
-      "silent_calls_total": 382,
-      "ok_calls_total": 2779
+      "silent_calls_total": 333,
+      "ok_calls_total": 2441
     },
     "config_attribution": {
       "found": true,
@@ -228,16 +228,16 @@
       ]
     },
     "impact": {
-      "conversations_affected": 2686,
-      "share_of_tenant_traffic": 0.2899,
-      "days_running": 12,
-      "derivation": "2686 sessions in [40,51], 29.0% of northwind-retail traffic, 382 empty tool responses"
+      "conversations_affected": 2366,
+      "share_of_tenant_traffic": 0.2878,
+      "days_running": 11,
+      "derivation": "2366 sessions in [40,50], 28.8% of northwind-retail traffic, 333 empty tool responses"
     },
     "evidence": [
-      "silent_fail_rate for get_order_status in order_status averaged 13.78% from day 40 (baseline 0.00%)",
+      "silent_fail_rate for get_order_status in order_status averaged 13.72% from day 40 (baseline 0.00%)",
       "declared error_rate stayed flat at 1.55% (baseline 1.51%) \u2014 the failure is invisible to standard monitoring",
-      "382 of 2779 successful calls returned empty payloads (result_field_count=0)",
-      "resolution rate for order_status dropped from 85.75% to 77.23%",
+      "333 of 2441 successful calls returned empty payloads (result_field_count=0)",
+      "resolution rate for order_status dropped from 85.75% to 77.66%",
       "tool config change on day 40: get_order_status 3.2.0 -> 3.3.0"
     ],
     "daily_timeseries": {
@@ -341,10 +341,6 @@
         {
           "day": 50,
           "value": 0.143939
-        },
-        {
-          "day": 51,
-          "value": 0.14497
         }
       ],
       "error_rate": [
@@ -447,10 +443,6 @@
         {
           "day": 50,
           "value": 0.029412
-        },
-        {
-          "day": 51,
-          "value": 0.014577
         }
       ],
       "resolution_rate": [
@@ -553,10 +545,6 @@
         {
           "day": 50,
           "value": 0.771654
-        },
-        {
-          "day": 51,
-          "value": 0.725
         }
       ]
     },
@@ -2368,8 +2356,8 @@
     "daily_timeseries": {},
     "coverage": {
       "per_tenant": {
-        "acme-bank": 0.7205,
-        "northwind-retail": 0.9308
+        "northwind-retail": 0.9308,
+        "acme-bank": 0.7205
       },
       "basis": "v2_flow sessions emit no tool_call/kb_lookup steps"
     },

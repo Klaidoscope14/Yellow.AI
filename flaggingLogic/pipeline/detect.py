@@ -13,6 +13,8 @@ Decoy detectors (is_regression=False, earns specificity credit):
 Golden Rule 1: All detection is deterministic math. No LLMs.
 Golden Rule 3: Never trend quality_score across judge_versions.
 """
+import math
+import statistics
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -41,25 +43,6 @@ def get_vals(series, from_day, to_day, key):
             if from_day <= r.get('day', -1) < to_day and r.get(key) is not None]
 
 
-def find_onset_above(series, key, threshold, min_consec, min_count_key=None, min_count=0):
-    """First day where metric > threshold for min_consec consecutive days."""
-    streak, onset = 0, None
-    for row in series:
-        val = row.get(key)
-        if min_count_key and (row.get(min_count_key) or 0) < min_count:
-            streak, onset = 0, None
-            continue
-        if val is not None and val > threshold:
-            if streak == 0:
-                onset = row['day']
-            streak += 1
-            if streak >= min_consec:
-                return onset
-        else:
-            streak, onset = 0, None
-    return None
-
-
 def find_onset_deviation(series, key, baseline_key, pct, min_consec, direction='up'):
     """First day where metric deviates from baseline by pct for min_consec days."""
     streak, onset = 0, None
@@ -82,6 +65,79 @@ def find_onset_deviation(series, key, baseline_key, pct, min_consec, direction='
         else:
             streak, onset = 0, None
     return None
+
+
+# ---------------------------------------------------------------------------
+# Adaptive thresholds — the anomaly bar is derived from the cohort's own
+# baseline (or its peers') and sample size, not a corpus-tuned constant. This
+# is what protects detection on a hidden corpus with different base rates:
+#   threshold = baseline + max(min_effect, z * standard_error)
+# The absolute value in config is kept only as a floor for cohorts that have no
+# baseline at all (e.g. a brand-new product line born broken).
+# ---------------------------------------------------------------------------
+
+def _binomial_se(p, n):
+    """Standard error of a rate p over n observations. Wider when n is small,
+    so a spike seen on a handful of calls must be larger to count."""
+    if not n or n <= 0:
+        return 0.0
+    p = min(max(float(p), 0.0), 1.0)
+    return math.sqrt(max(p * (1.0 - p), 1e-9) / n)
+
+
+def _adaptive_threshold(base, n, z, min_effect, floor):
+    """Per-row anomaly bar. With no baseline, fall back to the absolute floor."""
+    if base is None:
+        return floor
+    return float(base) + max(min_effect, z * _binomial_se(base, n))
+
+
+def _peer_baseline_by_day(cohorts, tenant, exclude_intent, key, count_key):
+    """Median of a rate across sibling cohorts (same tenant, other intents) per
+    day — the 'standard' a born-broken cohort has no history to be compared to."""
+    per_day = defaultdict(list)
+    for (t2, i2), series in cohorts.items():
+        if t2 != tenant or i2 == exclude_intent:
+            continue
+        for row in series:
+            val = row.get(key)
+            if val is not None and (row.get(count_key) or 0) > 0:
+                per_day[row['day']].append(val)
+    return {day: statistics.median(vals) for day, vals in per_day.items() if vals}
+
+
+def adaptive_onset_window(series, key, count_key, min_count, min_consec, z,
+                          min_effect, floor, baseline_key=None, baseline_by_day=None):
+    """First day starting a min_consec run over the adaptive bar, plus the last
+    flagged day. Every row is compared to its own baseline+SE bar."""
+    def bar(row):
+        if baseline_by_day is not None:
+            base = baseline_by_day.get(row['day'])
+        elif baseline_key is not None:
+            base = row.get(baseline_key)
+        else:
+            base = None
+        return _adaptive_threshold(base, row.get(count_key) or 0, z, min_effect, floor)
+
+    streak, onset, cand, flagged = 0, None, None, []
+    for row in series:
+        val, n = row.get(key), (row.get(count_key) or 0)
+        if val is None or n < min_count:
+            streak, cand = 0, None
+            continue
+        if val > bar(row):
+            flagged.append(row['day'])
+            if streak == 0:
+                cand = row['day']
+            streak += 1
+            if onset is None and streak >= min_consec:
+                onset = cand
+        else:
+            streak, cand = 0, None
+    if onset is None:
+        return None, None
+    end_day = max((d for d in flagged if d >= onset), default=onset)
+    return onset, end_day
 
 
 def config_near(config, tenant, day, lookback, kind=None):
@@ -126,13 +182,19 @@ def detect_kb_gap(metrics, cfg):
     g = cfg['general']
 
     for (tenant, intent), kb_series in kb_cohorts.items():
-        onset = find_onset_above(
-            kb_series, 'kb_miss_rate', t['kb_miss_rate_abs'],
-            t['min_consecutive_days'], 'total_lookups', t['min_kb_lookups_per_day'])
+        # Peer-relative bar: a KB gap is a cohort whose miss rate stands out
+        # against its sibling cohorts, not one that crosses a fixed 50%. This
+        # catches a born-broken new product (no self-history) and adapts to a
+        # corpus where the normal miss rate is higher or lower.
+        peer_by_day = _peer_baseline_by_day(kb_cohorts, tenant, intent,
+                                            'kb_miss_rate', 'total_lookups')
+        onset, end_day = adaptive_onset_window(
+            kb_series, 'kb_miss_rate', 'total_lookups', t['min_kb_lookups_per_day'],
+            t['min_consecutive_days'], t.get('kb_miss_z', 2.5),
+            t.get('kb_miss_min_effect', 0.15), t['kb_miss_rate_abs'],
+            baseline_by_day=peer_by_day)
         if onset is None:
             continue
-
-        end_day = max(r['day'] for r in kb_series if r.get('kb_miss_rate', 0) > t['kb_miss_rate_abs'])
         miss_during = safe_avg(get_vals(kb_series, onset, end_day + 1, 'kb_miss_rate'))
         score_during = safe_avg(get_vals(kb_series, onset, end_day + 1, 'mean_kb_top_score'))
         miss_before = safe_avg(get_vals(kb_series, max(0, onset - 14), onset, 'kb_miss_rate'))
@@ -251,17 +313,17 @@ def detect_silent_tool(metrics, cfg):
     g = cfg['general']
 
     for (tenant, intent, tool_name), tool_series in tool_cohorts.items():
-        onset = find_onset_above(
-            tool_series, 'silent_fail_rate', t['silent_fail_rate_abs'],
-            t['min_consecutive_days'], 'total_calls', t['min_tool_calls_per_day'])
+        # Baseline-relative bar: normal silent-fail is ~0, so a real contract
+        # break shows as a sustained rise above the tool's own rolling baseline
+        # by more than sampling noise — no fixed 8% needed. The absolute stays
+        # only as a floor for the first days before a baseline exists.
+        onset, end_day = adaptive_onset_window(
+            tool_series, 'silent_fail_rate', 'total_calls', t['min_tool_calls_per_day'],
+            t['min_consecutive_days'], t.get('silent_fail_z', 2.5),
+            t.get('silent_fail_min_effect', 0.04), t['silent_fail_rate_abs'],
+            baseline_key='baseline_silent_fail')
         if onset is None:
             continue
-
-        anomaly_rows = [r for r in tool_series
-                        if r['day'] >= onset and r.get('silent_fail_rate', 0) > t['silent_fail_rate_abs']]
-        if not anomaly_rows:
-            continue
-        end_day = max(r['day'] for r in anomaly_rows)
 
         sf_during = safe_avg(get_vals(tool_series, onset, end_day + 1, 'silent_fail_rate'))
         sf_before = safe_avg(get_vals(tool_series, max(0, onset - 14), onset, 'silent_fail_rate'))
@@ -767,8 +829,17 @@ def detect_judge_change(metrics, cfg):
             after = [r for r in t_quality
                      if jday <= r['day'] < jday + 10]
 
-            avg_before = safe_avg([r['mean_quality'] for r in before if r.get('mean_quality') is not None])
+            before_vals = [r['mean_quality'] for r in before if r.get('mean_quality') is not None]
+            avg_before = safe_avg(before_vals)
             avg_after = safe_avg([r['mean_quality'] for r in after if r.get('mean_quality') is not None])
+
+            # Required drop is adaptive: larger than the tenant's own normal
+            # day-to-day quality noise (z * before-window std), floored by a small
+            # minimum. A stricter/looser rubric on a hidden corpus moves quality by
+            # a different amount; the invariant is that ALL tenants move at once.
+            before_std = statistics.pstdev(before_vals) if len(before_vals) > 1 else 0.0
+            required_drop = max(t.get('quality_drop_min', 0.2),
+                                t.get('quality_drop_z', 2.0) * before_std)
 
             tenant_metrics[tenant] = {
                 'mean_quality_before': avg_before,
@@ -777,7 +848,7 @@ def detect_judge_change(metrics, cfg):
             }
             if avg_before is None or avg_after is None:
                 all_tenants_drop = False
-            elif (avg_before - avg_after) < t['quality_drop_abs']:
+            elif (avg_before - avg_after) < required_drop:
                 all_tenants_drop = False
 
         if not all_tenants_drop:

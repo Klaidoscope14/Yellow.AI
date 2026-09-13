@@ -9,20 +9,24 @@
 
     "f1_kb_gap": {
         "kb_miss_rate_abs": 0.5,
+        "kb_miss_min_effect": 0.15,
+        "kb_miss_z": 2.5,
         "kb_score_low_abs": 0.4,
         "resolution_drop_pct": 0.2,
-        "min_kb_lookups_per_day": 0,
+        "min_kb_lookups_per_day": 5,
         "min_consecutive_days": 3,
-        "_description": "KB gap: kb_hit=false rate exceeds 50% sustained, kb_top_score below 0.40, resolution drops >20%."
+        "_description": "KB gap: kb_hit=false rate exceeds its sibling cohorts' rate by max(15pts, 2.5*SE); kb_miss_rate_abs is only the no-peer fallback floor. kb_top_score low, resolution drops >20%."
     },
 
     "f2_silent_tool_failure": {
         "silent_fail_rate_abs": 0.08,
+        "silent_fail_min_effect": 0.04,
+        "silent_fail_z": 2.5,
         "error_rate_stability_tolerance": 0.05,
         "resolution_drop_pct": 0.15,
         "min_tool_calls_per_day": 3,
         "min_consecutive_days": 3,
-        "_description": "Silent tool fail: outcome=ok AND result_field_count=0 rate exceeds 8% (baseline is 0%). Declared error_rate stays flat."
+        "_description": "Silent tool fail: outcome=ok AND result_field_count=0 rate exceeds its own rolling baseline by max(4pts, 2.5*SE); silent_fail_rate_abs is the no-baseline fallback floor. Declared error_rate stays flat."
     },
 
     "f3_prompt_regression": {
@@ -53,8 +57,10 @@
 
     "d3_judge_change": {
         "quality_drop_abs": 0.3,
+        "quality_drop_min": 0.2,
+        "quality_drop_z": 2.0,
         "cross_tenant_tolerance_days": 3,
-        "_description": "Judge change dismissal: quality drops across ALL tenants simultaneously near a judge config change."
+        "_description": "Judge change dismissal: quality drops across ALL tenants simultaneously by max(quality_drop_min, 2.0*before-window std) near a judge config change. The structural signal (all tenants at once) matters more than the magnitude."
     },
 
     "deduplication": {

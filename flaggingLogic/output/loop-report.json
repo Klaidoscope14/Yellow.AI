@@ -1,7 +1,7 @@
 {
   "team": "nexus-detection-squad",
   "corpus": "A",
-  "generated_at": "2026-09-13T12:00:00Z",
+  "generated_at": "2026-09-13T19:41:54.633778+00:00",
   "system_notes": "Fully automated detection pipeline. All metric computation is deterministic DuckDB SQL (Golden Rule 1). Quality metrics segmented by judge_version (Golden Rule 3). 14-day rolling baselines via window functions. 6 detectors: 3 fault detectors + 3 decoy dismissers. Replay verification pending.",
   "metrics": [
     {
@@ -325,28 +325,28 @@
       "metric": "silent_fail_rate",
       "window": {
         "from_day": 40,
-        "to_day": 51
+        "to_day": 50
       },
       "is_regression": true,
       "severity": "high",
       "evidence": [
-        "silent_fail_rate for get_order_status in order_status averaged 13.78% from day 40 (baseline 0.00%)",
+        "silent_fail_rate for get_order_status in order_status averaged 13.72% from day 40 (baseline 0.00%)",
         "declared error_rate stayed flat at 1.55% (baseline 1.51%) \u2014 the failure is invisible to standard monitoring",
-        "382 of 2779 successful calls returned empty payloads (result_field_count=0)",
-        "resolution rate for order_status dropped from 85.75% to 77.23%",
+        "333 of 2441 successful calls returned empty payloads (result_field_count=0)",
+        "resolution rate for order_status dropped from 85.75% to 77.66%",
         "tool config change on day 40: get_order_status 3.2.0 -> 3.3.0"
       ],
-      "observed": 0.137805,
+      "observed": 0.137154,
       "expected": 0.0,
       "impact": {
-        "conversations_affected": 2686,
-        "share_of_traffic": 0.2899,
-        "days_running": 12,
-        "derivation": "2686 sessions matched the cohort over 12 days (29.0% of tenant traffic). Observed resolution 0.772 against a baseline of 0.857. 382 tool calls returned HTTP 200 with empty payload (result_field_count=0). 229 conversations that would have resolved did not.",
+        "conversations_affected": 2366,
+        "share_of_traffic": 0.2878,
+        "days_running": 11,
+        "derivation": "2366 sessions matched the cohort over 11 days (28.8% of tenant traffic). Observed resolution 0.777 against a baseline of 0.857. 333 tool calls returned HTTP 200 with empty payload (result_field_count=0). 191 conversations that would have resolved did not.",
         "downstream": {
-          "would_have_resolved_at_baseline": 2303,
-          "deficit": 229,
-          "silent_empty_responses": 382
+          "would_have_resolved_at_baseline": 2029,
+          "deficit": 191,
+          "silent_empty_responses": 333
         },
         "cost_usd": null
       },
@@ -354,7 +354,7 @@
         "agent_builder",
         "platform_owner"
       ],
-      "if_nothing_changes": "About 19 conversations per day that would previously have resolved now do not. The tool reports itself as healthy throughout (error_rate flat at ~1.5%), so nothing will surface this on its own."
+      "if_nothing_changes": "About 17 conversations per day that would previously have resolved now do not. The tool reports itself as healthy throughout (error_rate flat at ~1.5%), so nothing will surface this on its own."
     },
     {
       "id": "F3_acme-bank_acme_main_v3",
@@ -436,27 +436,6 @@
       "observed": 2696.5,
       "expected": 758.0,
       "not_a_regression_because": "temporary volume spike (4 days) with correlated latency increase but stable quality \u2014 load event, not regression; self-corrected"
-    },
-    {
-      "id": "D2_acme-bank_day15",
-      "tenant": "acme-bank",
-      "cohort": {},
-      "metric": "volume",
-      "window": {
-        "from_day": 15,
-        "to_day": 16
-      },
-      "is_regression": false,
-      "severity": "low",
-      "evidence": [
-        "volume spiked from 513 to 711 sessions/day (+39%) during days [15,16]",
-        "p95 latency rose from 1300ms to 1353ms (+4%)",
-        "quality stayed flat at 3.89 (was 3.89) \u2014 latency affected, quality not",
-        "volume returned to baseline after spike \u2014 temporary load event"
-      ],
-      "observed": 711.0,
-      "expected": 512.571429,
-      "not_a_regression_because": "temporary volume spike (2 days) with correlated latency increase but stable quality \u2014 load event, not regression; self-corrected"
     },
     {
       "id": "D1_acme-bank_balance_enquiry",
@@ -597,17 +576,6 @@
       ]
     },
     {
-      "id": "diag_D2_acme-bank_day15",
-      "finding_id": "D2_acme-bank_day15",
-      "cause_class": "load",
-      "confidence": 0.93,
-      "attributed_change": null,
-      "evidence": [
-        "volume spike with no config change",
-        "quality flat, self-corrects with volume"
-      ]
-    },
-    {
       "id": "diag_D1_acme-bank_balance_enquiry",
       "finding_id": "D1_acme-bank_balance_enquiry",
       "cause_class": "traffic_mix",
@@ -669,7 +637,7 @@
       "autonomy_rung": "L2",
       "predicted_delta": {
         "metric": "resolution_rate",
-        "from": 0.772,
+        "from": 0.777,
         "to": 0.857
       },
       "decision": {

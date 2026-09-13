@@ -1,0 +1,66 @@
+Here's the product broken down screen-by-screen, plus the chatbot spec and layout — all in text, no visuals.
+
+## Overall theme direction
+
+For a 30–45 year old operator with limited technical background: calm, low-density, plain-language-first. Practically this means:
+- One neutral base (soft white/off-white background, dark charcoal text) plus a single accent color used only for the two things that matter — the approve/reject control and severity/status. No multi-color chart palettes anywhere.
+- Generous whitespace, large readable type, short sentences as primary content — numbers and technical fields (fidelity/coverage/calibration) present but visually secondary, in smaller/muted text near the number they qualify.
+- No icons standing in for meaning (no ambiguous glyphs) — label things in words.
+- Progressive disclosure everywhere: the plain-English claim is always what's seen first; evidence, derivation, and raw metrics are one click/expand away, never both at once.
+
+## Screen 1 — Home
+
+Purpose: orientation in five seconds — "is something wrong, and does it need me."
+
+Layout, top to bottom:
+- Top bar: product name, left-aligned; nothing else — no nav clutter.
+- A short status line under the bar in plain language: e.g. "1 problem needs your decision. 3 things checked out fine." No charts here.
+- A vertical list of finding cards, one per real problem, ordered by severity/recency. Each card shows only: the plain-English claim, the affected traffic %, and a status pill (Needs decision / Approved / Rejected). Tapping a card goes to Screen 2.
+- Below the findings list, a collapsed, lighter-weight strip: "3 things we checked and ruled out" and "1 question we couldn't answer" — each expandable inline into a one-line reason, not a separate screen, so operators aren't forced to dig for the honesty content but it doesn't compete with the real findings for attention.
+- Bottom-right (or bottom-center): the chatbot launcher — a single pill/button, e.g. "Ask a question," persistent and unobtrusive.
+
+## Screen 2 — Finding detail
+
+Purpose: the decision screen. This is where the 18 + 15 scoring points live, so it gets the most layout care.
+
+Layout, top to bottom, single column, no sidebars:
+1. Plain-English claim as a headline.
+2. A compact facts row directly under it: affected conversations (count + % of traffic), how long it's been running, cost so far. Three plain numbers side by side, no chart.
+3. "What happened to these users" — two short lines: how many didn't resolve, how many escalated to a human unnecessarily.
+4. "Why this happened" — the diagnosis in plain language, with the exact configuration change (name + timestamp) called out as a distinct highlighted line, not buried in paragraph text.
+5. A muted, smaller "How we know" expandable section — baseline used, fidelity/coverage/calibration for the numbers above. Collapsed by default; this is the receipts, not the headline.
+6. "Who needs to act" — a named role, stated as a short label (Agent builder / Business owner / Platform team), not a paragraph.
+7. "If nothing is done" — one sentence, own line, slightly emphasized.
+8. A divider, then the fix section: proposed fix in plain language, the before/after replay result (two numbers side by side — before, after — no chart needed for two points), the stated risk, and what would block shipping it.
+9. Fixed at the bottom of this screen (or sticking to viewport bottom): the two-button control, Approve / Reject, large, unmissable, with a short required-or-optional note field for the reason (a rejection with a reason scores as well as an approval, so the field should feel equally weighted, not like an afterthought).
+
+## Screen 3 — Dismissed items (lookalikes)
+
+Purpose: prove the system isn't trigger-happy, without cluttering Home.
+
+Layout: same card format as Home's findings list, but each card is already "closed" — claim, then directly under it in plain text, why it was dismissed (e.g. "Traffic mix shifted from a marketing campaign — resolution held steady once adjusted for the mix"). No decision control here; these are read-only.
+
+## Screen 4 — Refusals / measurement gaps
+
+Purpose: the "most memorable thirty seconds" moment, given a dedicated home.
+
+Layout: one card per unanswerable question — the question in the operator's own words (from asks.md), then "We can't answer this because..." in plain language, then the specific event/data that would need to exist, in a slightly technical but still short line. Kept visually distinct (e.g. a different card treatment, not red/alarming — refusal is honest, not a failure state) so it doesn't read as an error.
+
+## The chatbot
+
+Important constraint before the UI: the chatbot must answer from the report's already-computed content (metrics, findings, diagnoses, gaps, standards) — it should retrieve and phrase, not freshly analyze the logs on the fly. That's Rule 1 in the PS: never let a model derive a fact the logs/pipeline already computed. So functionally, the chatbot is a natural-language front end over `loop-report.json` (plus a stated-refusal path for anything outside the 11 asks or outside what's measurable), not a second reasoning engine. Worth flagging now because it affects how it's built, not just how it looks.
+
+### Home screen — collapsed state
+- A single pill at the bottom of the screen, e.g. "Ask a question about your agent," sitting above/beside the existing chatbot-launcher position mentioned in Screen 1. Non-modal, doesn't cover content, low visual weight — it should read as an available tool, not a demanding notification.
+
+### Expanded state (on click)
+Rough layout, text description:
+- The pill expands in place into a panel — most natural as a bottom-anchored sheet that grows upward and covers roughly the bottom half to two-thirds of the screen, keeping the Home list peeking above it rather than a full-screen takeover (keeps it feeling lightweight, not like switching apps).
+- Panel top: a thin header bar with the product/chat name and a close (X) control, top-right.
+- Below that: a short row of 3–4 suggested-question chips reflecting the asks.md style questions in plain words (e.g. "What broke this week?", "What can't you tell me?") — this teaches the operator what's answerable without them guessing.
+- Middle: the conversation area, message-style, growing upward as it fills (newest message anchored near the input).
+- Answers themselves follow the same "claim first, receipts collapsed" pattern as Screen 2 — a plain-language answer line, with a small "why we can/can't answer this" or "based on: [finding link]" expandable underneath, and where relevant, a direct link/jump into the matching Finding detail screen rather than duplicating the whole analysis inline.
+- A refusal inside chat should look and read exactly like Screen 4's refusal cards in miniature — same honesty tone, not an error bubble.
+- Bottom: a single-line text input plus send control, full-width of the panel.
+
+This keeps the chatbot as a convenience layer over the same underlying report and screens — it never becomes a separate source of truth, which also keeps it inside Rule 1/Rule 2 and doesn't create a second place the operator has to trust independently.
