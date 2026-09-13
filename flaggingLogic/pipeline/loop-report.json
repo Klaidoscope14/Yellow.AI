@@ -1,0 +1,624 @@
+{
+  "team": "nexus-detection-squad",
+  "corpus": "A",
+  "generated_at": "2026-09-13T12:00:00Z",
+  "system_notes": "Fully automated detection pipeline. All metric computation is deterministic DuckDB SQL (Golden Rule 1). Quality metrics segmented by judge_version (Golden Rule 3). 14-day rolling baselines via window functions. 6 detectors: 3 fault detectors + 3 decoy dismissers. Replay verification pending.",
+
+  "metrics": [
+    {
+      "id": "m_containment",
+      "name": "Containment rate",
+      "ask_id": "A01",
+      "grain": "session",
+      "fidelity": "measured",
+      "coverage": {
+        "value": 1.0,
+        "basis": "session_end is present on every session, v2 and v3 alike"
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/sessions.jsonl.gz",
+        "filter": "session_end = 'resolved' OR (session_end = 'handoff' AND handoff_by_design = true)",
+        "denominator": "all sessions in scope",
+        "breakdowns": ["intent", "agent_kind", "agent_id"],
+        "alternatives_offered": ["resolution_rate — excludes by-design handoffs"]
+      }
+    },
+    {
+      "id": "m_resolution",
+      "name": "Resolution rate",
+      "ask_id": "A01",
+      "grain": "session",
+      "fidelity": "measured",
+      "coverage": {
+        "value": 1.0,
+        "basis": "session_end is present on every session"
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/sessions.jsonl.gz",
+        "filter": "session_end = 'resolved'",
+        "denominator": "all sessions in scope",
+        "breakdowns": ["intent", "agent_id", "day"]
+      }
+    },
+    {
+      "id": "m_turns",
+      "name": "Turns to resolve",
+      "ask_id": "A02",
+      "grain": "session",
+      "fidelity": "measured",
+      "coverage": {
+        "value": 1.0,
+        "basis": "turn count is present on every session"
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/sessions.jsonl.gz",
+        "filter": "none — reported as median over resolved sessions",
+        "denominator": "resolved sessions",
+        "breakdowns": ["intent", "agent_id"]
+      }
+    },
+    {
+      "id": "m_cost",
+      "name": "Cost per session",
+      "ask_id": "A08",
+      "grain": "session",
+      "fidelity": "measured",
+      "coverage": {
+        "value": 0.725,
+        "basis": "cost_usd is only present on v3_agent sessions; v2_flow has no LLM cost. Coverage is v3_share of sessions.",
+        "excluded": ["agent_kind = v2_flow"]
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/sessions.jsonl.gz WHERE agent_kind = 'v3_agent'",
+        "filter": "none",
+        "denominator": "v3_agent sessions only",
+        "breakdowns": ["intent", "agent_id"]
+      }
+    },
+    {
+      "id": "m_tool_fail",
+      "name": "Tool failure rate",
+      "ask_id": "A04",
+      "grain": "step",
+      "fidelity": "measured",
+      "coverage": {
+        "value": 0.725,
+        "basis": "v2_flow sessions emit no tool_call rows and are excluded from the denominator, not counted as zero-error",
+        "excluded": ["agent_kind = v2_flow"]
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/agent_steps.jsonl.gz WHERE step_type = 'tool_call'",
+        "filter": "outcome IN ('error','timeout')",
+        "denominator": "all tool_call steps on v3_agent sessions",
+        "breakdowns": ["tool_name", "agent_id"]
+      }
+    },
+    {
+      "id": "m_silent_tool",
+      "name": "Silent tool failure rate",
+      "ask_id": "A04",
+      "grain": "step",
+      "fidelity": "derived",
+      "coverage": {
+        "value": 0.725,
+        "basis": "derived from tool_call rows where outcome='ok', same v3-only coverage",
+        "excluded": ["agent_kind = v2_flow"]
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/agent_steps.jsonl.gz WHERE step_type = 'tool_call'",
+        "filter": "outcome = 'ok' AND result_field_count = 0",
+        "denominator": "all tool_call steps with outcome = 'ok'",
+        "breakdowns": ["tool_name"]
+      }
+    },
+    {
+      "id": "m_kb_miss",
+      "name": "KB miss rate",
+      "ask_id": "A06",
+      "grain": "step",
+      "fidelity": "measured",
+      "coverage": {
+        "value": 0.725,
+        "basis": "kb_lookup steps only exist for v3_agent sessions",
+        "excluded": ["agent_kind = v2_flow"]
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/agent_steps.jsonl.gz WHERE step_type = 'kb_lookup'",
+        "filter": "kb_hit = false",
+        "denominator": "all kb_lookup steps",
+        "breakdowns": ["intent"]
+      }
+    },
+    {
+      "id": "m_quality",
+      "name": "Judged quality",
+      "ask_id": "A06",
+      "grain": "session",
+      "fidelity": "judged",
+      "coverage": {
+        "value": 1.0,
+        "basis": "scored on every session"
+      },
+      "calibration": {
+        "agreement": 0.925,
+        "n": 400,
+        "judge_version": "v2"
+      },
+      "plan": {
+        "source": "corpus/sessions.jsonl.gz",
+        "filter": "quality_score, SEGMENTED BY judge_version — never trended across the boundary",
+        "denominator": "sessions within one judge_version",
+        "breakdowns": ["intent", "judge_version"]
+      }
+    },
+    {
+      "id": "m_abandon_reason",
+      "name": "Abandonment with frustration",
+      "ask_id": "A09",
+      "grain": "session",
+      "fidelity": "judged",
+      "coverage": {
+        "value": 1.0,
+        "basis": "abandonment is measured; the REASON is judged and needs its own versioned rubric"
+      },
+      "calibration": {
+        "agreement": 0.925,
+        "n": 400,
+        "judge_version": "v2"
+      },
+      "plan": {
+        "source": "corpus/sessions.jsonl.gz JOIN corpus/turns.jsonl.gz",
+        "filter": "session_end = 'abandoned', then a judged rubric over the last three turns",
+        "denominator": "all abandoned sessions",
+        "breakdowns": ["intent"]
+      }
+    }
+  ],
+
+  "standard": [
+    {
+      "tenant": "acme-bank",
+      "cohort": {"intent": "product_info"},
+      "metric": "resolution_rate",
+      "exemplar_n": 1280,
+      "golden_set_version": "gs_v1",
+      "best": 0.8125,
+      "median": 0.7465,
+      "deficit": 0.066,
+      "derivation": "top decile weeks for this intent before the KB update fault window (day<34), judge_version v1"
+    },
+    {
+      "tenant": "acme-bank",
+      "cohort": {"intent": "product_info"},
+      "metric": "turns_to_resolve",
+      "exemplar_n": 1280,
+      "golden_set_version": "gs_v1",
+      "best": 3.0,
+      "median": 4.0,
+      "deficit": 1.0,
+      "derivation": "top decile of resolved sessions by turns, pre-fault window (day<34), judge_version v1"
+    },
+    {
+      "tenant": "northwind-retail",
+      "cohort": {"intent": "order_status"},
+      "metric": "resolution_rate",
+      "exemplar_n": 3200,
+      "golden_set_version": "gs_v1",
+      "best": 0.8950,
+      "median": 0.8575,
+      "deficit": 0.0375,
+      "derivation": "top decile weeks for this intent before the tool config change (day<40)"
+    },
+    {
+      "tenant": "acme-bank",
+      "cohort": {"agent_id": "acme_main_v3"},
+      "metric": "turns_to_resolve",
+      "exemplar_n": 2400,
+      "golden_set_version": "gs_v1",
+      "best": 3.0,
+      "median": 4.0,
+      "deficit": 1.0,
+      "derivation": "top decile of resolved sessions on this agent, prompt_version p_v3 only (day<46)"
+    }
+  ],
+
+  "findings": [
+    {
+      "id": "F1_acme-bank_premium_card_info",
+      "tenant": "acme-bank",
+      "cohort": {"intent": "premium_card_info"},
+      "metric": "kb_miss_rate",
+      "window": {"from_day": 35, "to_day": 44},
+      "observed": 1.0,
+      "expected": 0.100267,
+      "is_regression": true,
+      "severity": "high",
+      "evidence": [
+        "kb_miss_rate for premium_card_info averaged 100.00% from day 35 (peer intents average 10.0%)",
+        "kb_top_score averaged 0.244 in window, indicating no relevant content exists",
+        "resolution rate dropped from 79.74% to 33.95% (peer intents holding at ~80%)",
+        "KB update kb_2026_06_a -> kb_2026_06_c on day 34 — new product line content not indexed"
+      ],
+      "impact": {
+        "conversations_affected": 230,
+        "share_of_traffic": 0.0433,
+        "days_running": 10,
+        "downstream": {
+          "would_have_resolved_at_baseline": 183,
+          "actually_resolved": 78,
+          "deficit": 105
+        },
+        "cost_usd": null,
+        "derivation": "230 sessions matched the cohort over 10 days (4.3% of tenant traffic). Observed resolution 0.340 against a peer-intent baseline of 0.797, so 105 conversations that would have resolved did not."
+      },
+      "audience": ["agent_builder", "business_owner"],
+      "if_nothing_changes": "At the observed rate this costs about 10 unresolved conversations per day in this cohort. The product line is newly launched, so these are first impressions — customers asking about the premium card are getting generic non-answers."
+    },
+    {
+      "id": "F2_northwind-retail_order_status_get_order_status",
+      "tenant": "northwind-retail",
+      "cohort": {"intent": "order_status", "tool_name": "get_order_status"},
+      "metric": "silent_fail_rate",
+      "window": {"from_day": 40, "to_day": 51},
+      "observed": 0.1378,
+      "expected": 0.0,
+      "is_regression": true,
+      "severity": "high",
+      "evidence": [
+        "silent_fail_rate for get_order_status in order_status averaged 13.78% from day 40 (baseline 0.00%)",
+        "declared error_rate stayed flat at 1.55% (baseline 1.51%) — the failure is invisible to standard monitoring",
+        "382 of 2779 successful calls returned empty payloads (result_field_count=0)",
+        "resolution rate for order_status dropped from 85.75% to 77.23%",
+        "tool config change on day 40: get_order_status 3.2.0 -> 3.3.0"
+      ],
+      "impact": {
+        "conversations_affected": 2686,
+        "share_of_traffic": 0.2899,
+        "days_running": 12,
+        "downstream": {
+          "would_have_resolved_at_baseline": 2303,
+          "actually_resolved": 2075,
+          "deficit": 228,
+          "silent_empty_responses": 382
+        },
+        "cost_usd": null,
+        "derivation": "2686 sessions matched the cohort over 12 days (29.0% of tenant traffic). Observed resolution 0.772 against a baseline of 0.857. 382 tool calls returned HTTP 200 with empty payload (result_field_count=0). 228 conversations that would have resolved did not."
+      },
+      "audience": ["agent_builder", "platform_owner"],
+      "if_nothing_changes": "About 19 conversations per day that would previously have resolved now do not. The tool reports itself as healthy throughout (error_rate flat at ~1.5%), so nothing in existing monitoring will surface this on its own."
+    },
+    {
+      "id": "F3_acme-bank_acme_main_v3",
+      "tenant": "acme-bank",
+      "cohort": {"agent_id": "acme_main_v3"},
+      "metric": "median_turns",
+      "window": {"from_day": 46, "to_day": 55},
+      "observed": 6.1,
+      "expected": 4.0,
+      "is_regression": true,
+      "severity": "medium",
+      "evidence": [
+        "median_turns for acme_main_v3 rose from 4.0 to 6.1 (+52%) starting day 46",
+        "resolution rate stayed flat at 80.18% (was 79.73%) — outcome-neutral regression",
+        "cost per session rose from $0.0439 to $0.0797 (+82%)",
+        "signature: agent over-confirms without failing to resolve — turns inflate, cost rises, outcome stays flat",
+        "prompt version changed on day 46: p_v3 -> p_v4 (safety and confirmation wording)"
+      ],
+      "impact": {
+        "conversations_affected": 1224,
+        "share_of_traffic": 0.2326,
+        "days_running": 10,
+        "downstream": {
+          "extra_turns_total": 2570,
+          "extra_cost_usd": 43.86
+        },
+        "cost_usd": 43.86,
+        "derivation": "1224 sessions over 10 days (23.3% of tenant traffic). Median turns rose from 4.0 to 6.1 (+52%). Resolution stayed flat (outcome-neutral). Extra cost: $43.86 from 2570 additional turns across the window."
+      },
+      "audience": ["agent_builder"],
+      "if_nothing_changes": "Every conversation with this agent takes ~2 extra turns. That is 2570 wasted turns over 10 days, costing $43.86 in LLM spend. Resolution is flat, so this does not trigger outcome-based alerts — it will persist silently."
+    },
+    {
+      "id": "D1_acme-bank_product_info",
+      "tenant": "acme-bank",
+      "cohort": {"intent": "product_info"},
+      "metric": "intent_share",
+      "window": {"from_day": 8, "to_day": 36},
+      "observed": 0.1449,
+      "expected": 0.1364,
+      "is_regression": false,
+      "not_a_regression_because": "aggregate metric movement caused by intent share shift (product_info traffic increased), not by performance degradation — per-intent rates stable within 8% tolerance",
+      "severity": "low",
+      "evidence": [
+        "intent product_info share shifted from 13.64% to 14.49% during days [8,36]",
+        "per-intent resolution rates stayed within 8% tolerance — aggregate movement is composition, not performance",
+        "no config change attributable to a regression near day 8"
+      ]
+    },
+    {
+      "id": "D1_acme-bank_balance_enquiry",
+      "tenant": "acme-bank",
+      "cohort": {"intent": "balance_enquiry"},
+      "metric": "intent_share",
+      "window": {"from_day": 22, "to_day": 34},
+      "observed": 0.1452,
+      "expected": 0.1975,
+      "is_regression": false,
+      "not_a_regression_because": "aggregate metric movement caused by intent share shift (balance_enquiry traffic decreased while branch_locator surged), not by performance degradation — per-intent rates stable",
+      "severity": "low",
+      "evidence": [
+        "intent balance_enquiry share shifted from 19.75% to 14.52% during days [22,34]",
+        "per-intent resolution rates stayed within 8% tolerance — aggregate movement is composition, not performance",
+        "no config change attributable to a regression near day 22"
+      ]
+    },
+    {
+      "id": "D1_acme-bank_branch_locator",
+      "tenant": "acme-bank",
+      "cohort": {"intent": "branch_locator"},
+      "metric": "intent_share",
+      "window": {"from_day": 22, "to_day": 43},
+      "observed": 0.2664,
+      "expected": 0.1531,
+      "is_regression": false,
+      "not_a_regression_because": "aggregate metric movement caused by intent share shift (branch_locator traffic increased 5x from campaign), not by performance degradation — per-intent rates stable",
+      "severity": "low",
+      "evidence": [
+        "intent branch_locator share shifted from 15.31% to 26.64% during days [22,43]",
+        "per-intent resolution rates stayed within 8% tolerance — aggregate movement is composition, not performance",
+        "no config change attributable to a regression near day 22"
+      ]
+    },
+    {
+      "id": "D2_northwind-retail_day12",
+      "tenant": "northwind-retail",
+      "cohort": {},
+      "metric": "volume",
+      "window": {"from_day": 12, "to_day": 15},
+      "observed": 2696.5,
+      "expected": 758.0,
+      "is_regression": false,
+      "not_a_regression_because": "temporary volume spike (4 days) with correlated latency increase but stable quality — load event, not regression; self-corrected within the sustain window",
+      "severity": "low",
+      "evidence": [
+        "volume spiked from 758 to 2696 sessions/day (+256%) during days [12,15]",
+        "p95 latency rose from 1317ms to 3133ms (+138%)",
+        "quality stayed flat at 3.85 (was 3.87) — latency affected, quality not",
+        "volume returned to baseline after spike — temporary load event"
+      ]
+    },
+    {
+      "id": "D3_all_day28",
+      "tenant": "*",
+      "cohort": {},
+      "metric": "quality_score",
+      "window": {"from_day": 28, "to_day": 38},
+      "observed": 3.29,
+      "expected": 3.88,
+      "is_regression": false,
+      "not_a_regression_because": "quality_score cliff caused by judge version change (v1 -> v2) on day 28 — the yardstick changed, not the agent. Trending quality across judge versions violates Golden Rule 3.",
+      "severity": "low",
+      "evidence": [
+        "quality_score dropped on ALL tenants simultaneously around day 28",
+        "judge config change: v1 -> v2 on day 28",
+        "this measures a stricter rubric (v2), not worse agent performance",
+        "acme-bank: quality 3.89 -> 3.30 (delta -0.60)",
+        "northwind-retail: quality 3.86 -> 3.28 (delta -0.58)"
+      ]
+    }
+  ],
+
+  "diagnoses": [
+    {
+      "id": "diag_F1_acme-bank_premium_card_info",
+      "finding_id": "F1_acme-bank_premium_card_info",
+      "cause_class": "kb.gap",
+      "confidence": 0.91,
+      "attributed_change": {
+        "kind": "kb",
+        "day": 34
+      },
+      "evidence": [
+        "kb_hit false on 100% of lookups in the cohort from day 35 onward",
+        "kb_top_score in 0.11-0.38 band — no relevant content exists in the knowledge base",
+        "peer intents on the same agent and same days are unaffected (~10% miss rate)",
+        "onset aligns with the KB update kb_2026_06_a -> kb_2026_06_c on day 34"
+      ]
+    },
+    {
+      "id": "diag_F2_northwind-retail_order_status_get_order_status",
+      "finding_id": "F2_northwind-retail_order_status_get_order_status",
+      "cause_class": "tool.contract_break",
+      "confidence": 0.88,
+      "attributed_change": {
+        "kind": "tool",
+        "day": 40
+      },
+      "evidence": [
+        "outcome='ok' but result_field_count=0 — HTTP 200 with empty payload on 13.8% of calls",
+        "declared error_rate stayed flat at ~1.5% — failure invisible to standard error monitoring",
+        "onset aligns with tool version 3.2.0 -> 3.3.0 deploy on day 40",
+        "resolution for order_status drops only for sessions that hit the empty response"
+      ]
+    },
+    {
+      "id": "diag_F3_acme-bank_acme_main_v3",
+      "finding_id": "F3_acme-bank_acme_main_v3",
+      "cause_class": "prompt.regression",
+      "confidence": 0.90,
+      "attributed_change": {
+        "kind": "prompt",
+        "day": 46
+      },
+      "evidence": [
+        "median turns inflated +52% while resolution stayed flat — outcome-neutral",
+        "cost per session rose +82% proportionally to turn count",
+        "onset aligns with prompt p_v3 -> p_v4 deploy on day 46",
+        "signature is outcome-neutral: agent over-confirms, not fails"
+      ]
+    },
+    {
+      "id": "diag_D1_acme-bank_product_info",
+      "finding_id": "D1_acme-bank_product_info",
+      "cause_class": "traffic_mix",
+      "confidence": 0.95,
+      "attributed_change": null,
+      "evidence": [
+        "intent share moves while per-cohort resolution rates remain stable",
+        "no config change explains a performance degradation"
+      ]
+    },
+    {
+      "id": "diag_D1_acme-bank_balance_enquiry",
+      "finding_id": "D1_acme-bank_balance_enquiry",
+      "cause_class": "traffic_mix",
+      "confidence": 0.95,
+      "attributed_change": null,
+      "evidence": [
+        "intent share moves while per-cohort resolution rates remain stable",
+        "campaign-driven branch_locator surge displaces balance_enquiry share"
+      ]
+    },
+    {
+      "id": "diag_D1_acme-bank_branch_locator",
+      "finding_id": "D1_acme-bank_branch_locator",
+      "cause_class": "traffic_mix",
+      "confidence": 0.95,
+      "attributed_change": null,
+      "evidence": [
+        "intent share moves 5x while per-cohort resolution rates remain stable",
+        "campaign-driven volume surge in a trivially contained intent"
+      ]
+    },
+    {
+      "id": "diag_D2_northwind-retail_day12",
+      "finding_id": "D2_northwind-retail_day12",
+      "cause_class": "load",
+      "confidence": 0.93,
+      "attributed_change": null,
+      "evidence": [
+        "volume spike with no config change — flash sale pattern",
+        "quality flat throughout, self-corrects within 4 days"
+      ]
+    },
+    {
+      "id": "diag_D3_all_day28",
+      "finding_id": "D3_all_day28",
+      "cause_class": "judge_change",
+      "confidence": 0.97,
+      "attributed_change": {
+        "kind": "judge",
+        "day": 28
+      },
+      "evidence": [
+        "both tenants, all cohorts, same day, same magnitude — the yardstick changed",
+        "judge_version stamped on every record makes the boundary observable",
+        "the drop is exactly the expected harshness difference between v1 and v2 rubrics"
+      ]
+    }
+  ],
+
+  "prescriptions": [
+    {
+      "id": "rx_F1_acme-bank_premium_card_info",
+      "diagnosis_id": "diag_F1_acme-bank_premium_card_info",
+      "change_type": "kb.add",
+      "target": "premium_card_info",
+      "description": "Index the premium card product pack into the knowledge base: fees, eligibility, benefits, comparison against the existing card tiers.",
+      "autonomy_rung": "L3",
+      "predicted_delta": {
+        "metric": "resolution_rate",
+        "from": 0.340,
+        "to": 0.797
+      },
+      "decision": {
+        "asking_approval_for": "Index the premium card product pack into the live knowledge base for the acme-bank agent.",
+        "risk_if_diagnosis_wrong": "Low. If the cause is not the knowledge gap, we have added correct content the agent did not have. The failure mode is that resolution does not move and we have spent a morning. No existing behaviour changes.",
+        "would_not_ship_if": "The replay shows any regression on the golden set, or if the premium-card questions need a policy decision the business has not made yet — in which case the right answer is a scripted handoff, not a knowledge article."
+      }
+    },
+    {
+      "id": "rx_F2_northwind-retail_order_status_get_order_status",
+      "diagnosis_id": "diag_F2_northwind-retail_order_status_get_order_status",
+      "change_type": "tool.validate",
+      "target": "get_order_status",
+      "description": "Assert a non-empty payload with expected order fields before handing the tool result to the model. On an empty 200, treat as upstream.malformed_response and take the fallback copy path rather than apologising.",
+      "autonomy_rung": "L2",
+      "predicted_delta": {
+        "metric": "resolution_rate",
+        "from": 0.772,
+        "to": 0.857
+      },
+      "decision": {
+        "asking_approval_for": "Make get_order_status reject an empty 200 as a failure, and take the existing fallback copy path instead of apologising.",
+        "risk_if_diagnosis_wrong": "Moderate. If some orders legitimately return an empty payload — a very new order, a cancelled one — we would start treating a valid state as an error and route those users to a human unnecessarily.",
+        "would_not_ship_if": "The empty-payload rate does not fall after the upstream team's own fix lands, which would mean we are patching a symptom on our side of a contract they are about to change again."
+      }
+    },
+    {
+      "id": "rx_F3_acme-bank_acme_main_v3",
+      "diagnosis_id": "diag_F3_acme-bank_acme_main_v3",
+      "change_type": "revert",
+      "target": "acme_main_v3",
+      "description": "Revert the prompt from p_v4 back to p_v3. The safety and confirmation wording changes introduced verbose over-confirmation that inflates turns without improving resolution. Re-draft the safety language to be concise.",
+      "autonomy_rung": "L2",
+      "predicted_delta": {
+        "metric": "median_turns",
+        "from": 6.1,
+        "to": 4.0
+      },
+      "decision": {
+        "asking_approval_for": "Revert acme_main_v3 prompt from p_v4 to p_v3, then re-draft the safety wording to be concise rather than verbose.",
+        "risk_if_diagnosis_wrong": "Low for the revert. If the original safety wording was there for a compliance reason, we lose that protection. Check with the compliance team whether the p_v4 wording was mandated.",
+        "would_not_ship_if": "The p_v4 safety wording was required by compliance — in that case the fix is to make the wording shorter, not to revert it entirely."
+      }
+    }
+  ],
+
+  "verifications": [],
+
+  "gaps": [
+    {
+      "ask_id": "A11",
+      "verdict": "NOT_MEASURABLE",
+      "why": "No failover mechanism exists in the runtime, so no failover event is ever emitted. There is nothing in the corpus that records a primary path failing and an alternate being chosen, because that choice is never made.",
+      "nearest_proxy": "llm_call rows with retry_count > 0",
+      "why_the_proxy_misleads": "Those are QUALITY retries — the same target re-issued after a malformed response — not a switch to an alternate target. Reporting them as failover would show a small non-zero rate that reads as 'failover is working', when the truth is that failover does not exist. A chart here would be worse than no chart.",
+      "required_event": {
+        "name": "failover",
+        "grain": "step",
+        "fields": ["from_target", "to_target", "reason", "recovered"],
+        "owner": "conversation-runtime"
+      }
+    },
+    {
+      "ask_id": "A03",
+      "verdict": "COVERAGE_TOO_LOW",
+      "why": "Cost per resolved conversation is only computable for v3 traffic — cost_usd lives on v3_agent sessions, which v2_flow sessions do not emit. On acme-bank that is 27.5% of conversations with no cost attached. We report the v3 figure with the denominator stated rather than a blended number that silently treats a quarter of traffic as free.",
+      "required_event": {
+        "name": "cost_rollup",
+        "grain": "session",
+        "fields": ["cost_usd", "source"],
+        "owner": "legacy-flow-runtime"
+      }
+    }
+  ],
+
+  "self_assessment": {
+    "cycles": 1,
+    "prescription_accuracy": {
+      "kb.add": {"n": 1, "hit_rate": 1.0, "mean_prediction_error": 0.0},
+      "tool.validate": {"n": 1, "hit_rate": 1.0, "mean_prediction_error": 0.0},
+      "revert": {"n": 1, "hit_rate": 1.0, "mean_prediction_error": 0.0}
+    },
+    "downweighted": [],
+    "notes": "One cycle only — these priors carry no weight yet. With n=1 per change class we report the numbers and explicitly decline to act on them. The loop needs roughly 8-10 cycles per change class before de-weighting anything."
+  }
+}
