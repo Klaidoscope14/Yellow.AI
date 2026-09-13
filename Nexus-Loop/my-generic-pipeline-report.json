@@ -1,0 +1,256 @@
+{
+  "team": "generic-pipeline",
+  "corpus": "A",
+  "system_notes": "Level 1 pipeline: one regression, three dismissed decoys, one refused ask. No fixes or replay yet.",
+  "metrics": [
+    {
+      "id": "m_containment",
+      "name": "Containment rate",
+      "ask_id": "A01",
+      "grain": "session",
+      "fidelity": "measured",
+      "coverage": {
+        "value": 1.0,
+        "basis": "session_end and handoff_by_design are present on every session"
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/sessions.jsonl.gz",
+        "filter": "session_end = resolved OR designed handoff",
+        "denominator": "all sessions",
+        "breakdowns": [
+          "tenant",
+          "intent",
+          "channel",
+          "agent_kind"
+        ]
+      }
+    },
+    {
+      "id": "m_tool_failure",
+      "name": "Tool failure rate",
+      "ask_id": "A04",
+      "grain": "step",
+      "fidelity": "measured",
+      "coverage": {
+        "value": 0.725,
+        "basis": "v2_flow emits no tool_call rows and is excluded from the denominator",
+        "excluded": [
+          "agent_kind = v2_flow"
+        ]
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/agent_steps.jsonl.gz WHERE step_type = tool_call",
+        "filter": "outcome IN (error, timeout)",
+        "denominator": "all v3 tool_call steps",
+        "breakdowns": [
+          "error_class",
+          "tool_name",
+          "channel"
+        ]
+      }
+    },
+    {
+      "id": "m_quality",
+      "name": "Judged quality",
+      "ask_id": "A06",
+      "grain": "session",
+      "fidelity": "judged",
+      "coverage": {
+        "value": 1.0,
+        "basis": "quality_score exists on every session but is only compared within judge_version"
+      },
+      "calibration": {
+        "agreement": 0.87,
+        "n": 96,
+        "judge_version": "v1"
+      },
+      "plan": {
+        "source": "corpus/sessions.jsonl.gz",
+        "filter": "quality_score segmented by judge_version",
+        "denominator": "sessions within one judge_version",
+        "breakdowns": [
+          "intent",
+          "judge_version"
+        ]
+      }
+    }
+  ],
+  "standard": [],
+  "findings": [
+    {
+      "id": "f3",
+      "tenant": "acme-bank",
+      "cohort": {
+        "intent": "branch_locator"
+      },
+      "metric": "resolution_rate",
+      "window": {
+        "from_day": 22,
+        "to_day": 32
+      },
+      "observed": 0.8324,
+      "expected": 0.8118,
+      "is_regression": false,
+      "severity": "low",
+      "not_a_regression_because": "Aggregate performance changes because branch_locator share moves from 0.133 to 0.437; cohort rates remain stable, so this is traffic mix.",
+      "evidence": [
+        "branch_locator share 0.133 -> 0.437",
+        "no relevant configuration change in the window"
+      ]
+    },
+    {
+      "id": "f5",
+      "tenant": "northwind-retail",
+      "cohort": {},
+      "metric": "resolution_rate",
+      "window": {
+        "from_day": 12,
+        "to_day": 16
+      },
+      "observed": 0.7769,
+      "expected": 0.8054,
+      "is_regression": false,
+      "severity": "low",
+      "not_a_regression_because": "Traffic and tool latency spike together, while resolution remains broadly stable and recovers after the spike; this is a load event.",
+      "evidence": [
+        "sessions per day increase sharply",
+        "tool p95 latency rises",
+        "quality and resolution recover after the volume event"
+      ]
+    },
+    {
+      "id": "f4",
+      "tenant": "*",
+      "cohort": {},
+      "metric": "quality_score",
+      "window": {
+        "from_day": 28,
+        "to_day": 38
+      },
+      "observed": 3.3,
+      "expected": 3.88,
+      "is_regression": false,
+      "severity": "low",
+      "not_a_regression_because": "Quality moves simultaneously across both tenants at the judge rubric boundary; this is a measurement change, not agent behavior.",
+      "evidence": [
+        "judge changes from v1 to v2 on day 28",
+        "both tenants move together"
+      ]
+    },
+    {
+      "id": "f1",
+      "tenant": "acme-bank",
+      "cohort": {
+        "intent": "premium_card_info"
+      },
+      "metric": "resolution_rate",
+      "window": {
+        "from_day": 35,
+        "to_day": 42
+      },
+      "observed": 0.3368,
+      "expected": 0.7562,
+      "is_regression": true,
+      "severity": "critical",
+      "evidence": [
+        "premium_card_info has no valid historical before-period",
+        "v3 resolution is 0.337 versus peer 0.756",
+        "KB hit rate is 0.000 across 247 lookups",
+        "KB evidence is concentrated in the low-score band starting at 0.11",
+        "config_timeline marks a KB change near day 34"
+      ],
+      "impact": {
+        "conversations_affected": 95,
+        "share_of_traffic": 0.0265,
+        "downstream": {
+          "unplanned_handoffs": 60,
+          "abandoned": 3
+        },
+        "cost_usd": 5.24,
+        "days_running": 7,
+        "derivation": "Counted the discovered cohort in its candidate window and compared its resolution with the discovered peer baseline; no historical before-period was available."
+      },
+      "audience": [
+        "agent_builder",
+        "business_owner"
+      ],
+      "if_nothing_changes": "The new product cohort continues generating unresolved conversations and unnecessary human handoffs."
+    }
+  ],
+  "diagnoses": [
+    {
+      "id": "d3",
+      "finding_id": "f3",
+      "cause_class": "traffic_mix",
+      "confidence": 0.95,
+      "evidence": [
+        "intent share changes while cohort rates remain stable"
+      ]
+    },
+    {
+      "id": "d5",
+      "finding_id": "f5",
+      "cause_class": "load",
+      "confidence": 0.93,
+      "evidence": [
+        "volume and latency rise together, then recover"
+      ]
+    },
+    {
+      "id": "d4",
+      "finding_id": "f4",
+      "cause_class": "judge_change",
+      "confidence": 0.97,
+      "attributed_change": {
+        "kind": "judge",
+        "day": 28
+      },
+      "evidence": [
+        "both tenants move at the rubric boundary"
+      ]
+    },
+    {
+      "id": "d1",
+      "finding_id": "f1",
+      "cause_class": "kb.gap",
+      "confidence": 0.91,
+      "attributed_change": {
+        "kind": "kb",
+        "day": 34
+      },
+      "evidence": [
+        "KB retrieval fails for the cohort",
+        "peer intents remain healthy",
+        "the KB changes at cohort launch"
+      ]
+    }
+  ],
+  "prescriptions": [],
+  "verifications": [],
+  "gaps": [
+    {
+      "ask_id": "A11",
+      "verdict": "NOT_MEASURABLE",
+      "why": "The runtime does not emit an event showing a primary target failing and an alternate target serving the user.",
+      "nearest_proxy": "llm_call rows with retry_count > 0",
+      "why_the_proxy_misleads": "A retry may call the same target again and does not prove failover.",
+      "required_event": {
+        "name": "failover",
+        "grain": "step",
+        "fields": [
+          "from_target",
+          "to_target",
+          "reason",
+          "recovered"
+        ],
+        "owner": "conversation-runtime"
+      }
+    }
+  ],
+  "self_assessment": {
+    "cycles": 0,
+    "prescription_accuracy": {}
+  }
+}

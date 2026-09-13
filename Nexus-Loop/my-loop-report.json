@@ -1,0 +1,90 @@
+{
+  "team": "your-team",
+  "corpus": "A",
+  "system_notes": "Produced by starter.py. Two metrics, no analysis yet.",
+  "metrics": [
+    {
+      "id": "m_containment",
+      "name": "Containment rate",
+      "ask_id": "A01",
+      "grain": "session",
+      "fidelity": "measured",
+      "coverage": {
+        "value": 1.0,
+        "basis": "session_end and handoff_by_design are present on every session, v2_flow and v3_agent alike"
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/sessions.jsonl.gz",
+        "filter": "session_end = 'resolved' OR (session_end = 'handoff' AND handoff_by_design = true)",
+        "denominator": "all sessions in scope",
+        "breakdowns": [
+          "tenant",
+          "intent",
+          "channel",
+          "agent_kind"
+        ]
+      }
+    },
+    {
+      "id": "m_tool_failure_acme",
+      "name": "Tool failure rate \u2014 acme-bank",
+      "ask_id": "A04",
+      "grain": "step",
+      "fidelity": "measured",
+      "coverage": {
+        "value": 0.7205,
+        "basis": "v2_flow sessions emit no tool_call rows, so they are excluded from the denominator rather than counted as zero-error. Measured from this tenant's own traffic, not assumed.",
+        "excluded": [
+          "agent_kind = v2_flow"
+        ]
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/agent_steps.jsonl.gz WHERE step_type = 'tool_call'",
+        "filter": "outcome IN ('error','timeout') AND tenant = 'acme-bank'",
+        "denominator": "all tool_call steps for this tenant (v3_agent only)",
+        "breakdowns": [
+          "error_class",
+          "tool_name",
+          "channel"
+        ]
+      }
+    },
+    {
+      "id": "m_tool_failure_northwind",
+      "name": "Tool failure rate \u2014 northwind-retail",
+      "ask_id": "A04",
+      "grain": "step",
+      "fidelity": "measured",
+      "coverage": {
+        "value": 0.9308,
+        "basis": "v2_flow sessions emit no tool_call rows, so they are excluded from the denominator rather than counted as zero-error. Measured from this tenant's own traffic, not assumed.",
+        "excluded": [
+          "agent_kind = v2_flow"
+        ]
+      },
+      "calibration": null,
+      "plan": {
+        "source": "corpus/agent_steps.jsonl.gz WHERE step_type = 'tool_call'",
+        "filter": "outcome IN ('error','timeout') AND tenant = 'northwind-retail'",
+        "denominator": "all tool_call steps for this tenant (v3_agent only)",
+        "breakdowns": [
+          "error_class",
+          "tool_name",
+          "channel"
+        ]
+      }
+    }
+  ],
+  "standard": [],
+  "findings": [],
+  "diagnoses": [],
+  "prescriptions": [],
+  "verifications": [],
+  "gaps": [],
+  "self_assessment": {
+    "cycles": 0,
+    "prescription_accuracy": {}
+  }
+}
