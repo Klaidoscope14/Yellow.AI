@@ -21,3 +21,12 @@ export function fmtMetric(metric: string | undefined, v: number | null | undefin
 
 export const lowerFirst = (s: string | undefined): string =>
   s ? s.charAt(0).toLowerCase() + s.slice(1) : "";
+
+// Direction inference for comparison visuals: most rate metrics here are
+// "goodness" rates (resolution_rate, containment_rate) where a drop is the
+// harm. A handful are "badness" rates or costs (miss/error/fail/cost/latency/
+// turns) where a rise is the harm — those need the inverse reading.
+const HIGHER_IS_WORSE = /(miss|error|fail|cost|latency|turns|churn|abandon)/i;
+export function lowerIsWorseFor(metric: string | undefined): boolean {
+  return !metric || !HIGHER_IS_WORSE.test(metric);
+}

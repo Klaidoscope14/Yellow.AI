@@ -1,5 +1,6 @@
 import { useReport } from "../hooks/ReportContext";
 import { ASKS } from "../lib/asks";
+import { RadialStat } from "../components/RadialStat";
 
 export function Gaps() {
   const { report } = useReport();
@@ -50,17 +51,21 @@ export function Gaps() {
       {/* Coverage summary from metrics */}
       {metrics.length > 0 && (
         <section className="strip">
-          <p className="muted small" style={{ fontWeight: 600, marginBottom: 8 }}>Coverage &amp; Fidelity</p>
+          <p className="muted small" style={{ fontWeight: 600, marginBottom: 4 }}>Coverage &amp; Fidelity</p>
           {metrics.map((m) => (
-            <p key={m.id} className="muted small" style={{ padding: "3px 0" }}>
-              <span style={{ textTransform: "uppercase", fontSize: 11, fontWeight: 600, letterSpacing: ".04em", marginRight: 6 }}>
-                {m.fidelity}
-              </span>
-              {m.name ?? m.id} &middot; coverage {(m.coverage.value * 100).toFixed(0)}% ({m.coverage.basis})
-              {m.calibration && (
-                <> &middot; calibration {(m.calibration.agreement * 100).toFixed(1)}% (n={m.calibration.n})</>
-              )}
-            </p>
+            <div className="coverage-row" key={m.id}>
+              <RadialStat value={m.coverage.value} size={40} strokeWidth={4} />
+              <div className="coverage-row-body">
+                <span className="fidelity-badge">{m.fidelity}</span>
+                <span>{m.name ?? m.id}</span>
+                <span className="muted small">
+                  coverage {(m.coverage.value * 100).toFixed(0)}% ({m.coverage.basis})
+                  {m.calibration && (
+                    <> &middot; calibration {(m.calibration.agreement * 100).toFixed(1)}% (n={m.calibration.n})</>
+                  )}
+                </span>
+              </div>
+            </div>
           ))}
         </section>
       )}
