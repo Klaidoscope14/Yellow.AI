@@ -1,9 +1,18 @@
+import { useState } from "react";
 import { useReport } from "../hooks/ReportContext";
 import { regressions, prescriptionFor } from "../lib/report";
 import { pct, fmtMetric } from "../lib/format";
+import { DecisionReceipt } from "../components/DecisionReceipt";
+
+type Decided = {
+  finding: ReturnType<typeof regressions>[number];
+  prescription: NonNullable<ReturnType<typeof prescriptionFor>>;
+  approval: NonNullable<NonNullable<ReturnType<typeof prescriptionFor>>["approval"]>;
+};
 
 export function Decisions() {
   const { report } = useReport();
+  const [receiptFor, setReceiptFor] = useState<Decided | null>(null);
   if (!report) return null;
 
   const regs = regressions(report);
@@ -13,7 +22,7 @@ export function Decisions() {
       const rx = prescriptionFor(report, f);
       return rx?.approval ? { finding: f, prescription: rx, approval: rx.approval } : null;
     })
-    .filter(Boolean) as { finding: (typeof regs)[0]; prescription: NonNullable<ReturnType<typeof prescriptionFor>>; approval: NonNullable<NonNullable<ReturnType<typeof prescriptionFor>>["approval"]> }[];
+    .filter(Boolean) as Decided[];
 
   const sa = report.self_assessment;
 
@@ -57,9 +66,27 @@ export function Decisions() {
                 &ldquo;{approval.reason}&rdquo;
               </p>
             )}
+            <button
+              className="receipt-link"
+              onClick={(e) => {
+                e.stopPropagation();
+                setReceiptFor({ finding, prescription, approval });
+              }}
+            >
+              View receipt &rsaquo;
+            </button>
           </div>
         ))}
       </section>
+
+      {receiptFor && (
+        <DecisionReceipt
+          finding={receiptFor.finding}
+          prescription={receiptFor.prescription}
+          approval={receiptFor.approval}
+          onClose={() => setReceiptFor(null)}
+        />
+      )}
 
       <hr className="divider" />
 

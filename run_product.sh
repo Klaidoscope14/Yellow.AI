@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 # Launch the whole product: replay endpoint + ai/ml layer + backend.
 # Frontend -> backend (:8801) -> ai/ml (:8802) -> replay (:8719).
 #
@@ -8,7 +8,17 @@
 # Ctrl-C stops all three.
 set -u
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-PY="${NEXUS_PY:-$ROOT/.venv/bin/python}"
+if [ -n "${NEXUS_PY:-}" ]; then
+  PY="$NEXUS_PY"
+elif [ -x "$ROOT/.venv/bin/python" ]; then
+  PY="$ROOT/.venv/bin/python"
+elif [ -x "$ROOT/.venv/Scripts/python.exe" ]; then
+  PY="$ROOT/.venv/Scripts/python.exe"
+elif command -v py >/dev/null 2>&1; then
+  PY="py"
+else
+  PY="python"
+fi
 KIT="${NEXUS_KIT:-$ROOT/Nexus-Loop/kit}"
 DATA="${NEXUS_DATA_DIR:-$ROOT/flaggingLogic/data}"
 GT="${NEXUS_GROUND_TRUTH:-$ROOT/flaggingLogic/pipeline/ground_truth.json}"

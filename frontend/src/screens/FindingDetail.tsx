@@ -1,9 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useReport } from "../hooks/ReportContext";
 import { diagnosisFor, prescriptionFor, verificationFor, plainCause, statusOf } from "../lib/report";
-import { pct, int, money, fmtMetric } from "../lib/format";
+import { pct, int, money, fmtMetric, lowerIsWorseFor } from "../lib/format";
 import { ROLE_LABEL } from "../lib/asks";
 import { DecisionGate } from "../components/DecisionGate";
+import { RadialStat } from "../components/RadialStat";
+import { ComparisonBars } from "../components/ComparisonBars";
 import type { Audience } from "../api/types";
 
 export function FindingDetail() {
@@ -22,88 +24,84 @@ export function FindingDetail() {
 
   return (
     <>
-      <button className="back" onClick={() => nav(-1)}>&larr; Back</button>
+      <button className="back" onClick={() => nav("/")}>&larr; Close</button>
 
       <div className="detail">
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span className={`pill ${status.cls}`}>{status.label}</span>
-          <span className={`sev-dot sev-${finding.severity}`} />
-          <span className="muted small" style={{ textTransform: "uppercase", fontWeight: 600, letterSpacing: ".04em" }}>
-            {finding.severity}
-          </span>
+          <span className={`sev-dot ${finding.severity}`} />
+          <span className={`sev-label ${finding.severity}`}>{finding.severity}</span>
         </div>
 
         <h1>{finding.plain_summary}</h1>
 
-        {/* Affected slice */}
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-          <span className="role">{finding.tenant}</span>
-          {Object.entries(finding.cohort).map(([k, v]) => (
-            <span className="role" key={k}>{v}</span>
+        {/* Affected slice — descriptive metadata reads as a breadcrumb, not tag-boxes */}
+        <p className="breadcrumb">
+          {finding.tenant}
+          {Object.values(finding.cohort).map((v, i) => (
+            <span key={i}>
+              <span className="sep">&middot;</span>
+              {v}
+            </span>
           ))}
-          <span className="role">
-            day {finding.window.from_day}&ndash;{finding.window.to_day}
-          </span>
-        </div>
+          <span className="sep">&middot;</span>
+          Day {finding.window.from_day}&ndash;{finding.window.to_day}
+        </p>
 
         {/* Audience */}
         {finding.audience && finding.audience.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <span className="muted small">Owner: </span>
-            {finding.audience.map((a) => (
-              <span className="role" key={a}>{ROLE_LABEL[a as Audience] ?? a}</span>
-            ))}
-          </div>
+          <p className="owner-line">
+            Owner: <strong>{finding.audience.map((a) => ROLE_LABEL[a as Audience] ?? a).join(", ")}</strong>
+          </p>
         )}
 
-        {/* Impact */}
+        {/* Impact — one stat rail, no boxed tiles */}
         {finding.impact && (
           <>
-            <div className="facts">
-              <div className="fact">
-                <div className="n">{int(finding.impact.conversations_affected)}</div>
-                <div className="l">Conversations affected</div>
+            <div className="stat-rail">
+              <div className="stat">
+                <span className="n">{int(finding.impact.conversations_affected)}</span>
+                <span className="l">Conversations affected</span>
               </div>
-              <div className="fact">
-                <div className="n">{pct(finding.impact.share_of_traffic)}</div>
-                <div className="l">Share of traffic</div>
+              <div className="stat radial">
+                <RadialStat value={finding.impact.share_of_traffic} label="Share of traffic" size={60} strokeWidth={5} />
               </div>
-              <div className="fact">
-                <div className="n">{finding.impact.days_running}d</div>
-                <div className="l">Running</div>
+              <div className="stat">
+                <span className="n">{finding.impact.days_running}d</span>
+                <span className="l">Running</span>
               </div>
               {finding.impact.cost_usd != null && (
-                <div className="fact">
-                  <div className="n">{money(finding.impact.cost_usd)}</div>
-                  <div className="l">Cost impact</div>
+                <div className="stat">
+                  <span className="n">{money(finding.impact.cost_usd)}</span>
+                  <span className="l">Cost impact</span>
                 </div>
               )}
             </div>
 
             {finding.impact.downstream && (
-              <div className="facts">
+              <div className="stat-rail">
                 {finding.impact.downstream.would_have_resolved_at_baseline != null && (
-                  <div className="fact">
-                    <div className="n">{int(finding.impact.downstream.would_have_resolved_at_baseline)}</div>
-                    <div className="l">Would have resolved</div>
+                  <div className="stat">
+                    <span className="n">{int(finding.impact.downstream.would_have_resolved_at_baseline)}</span>
+                    <span className="l">Would have resolved</span>
                   </div>
                 )}
                 {finding.impact.downstream.silent_empty_responses != null && (
-                  <div className="fact">
-                    <div className="n">{int(finding.impact.downstream.silent_empty_responses)}</div>
-                    <div className="l">Silent empty responses</div>
+                  <div className="stat">
+                    <span className="n">{int(finding.impact.downstream.silent_empty_responses)}</span>
+                    <span className="l">Silent empty responses</span>
                   </div>
                 )}
                 {finding.impact.downstream.extra_turns_total != null && (
-                  <div className="fact">
-                    <div className="n">{int(finding.impact.downstream.extra_turns_total)}</div>
-                    <div className="l">Extra turns</div>
+                  <div className="stat">
+                    <span className="n">{int(finding.impact.downstream.extra_turns_total)}</span>
+                    <span className="l">Extra turns</span>
                   </div>
                 )}
                 {finding.impact.downstream.extra_cost_usd != null && (
-                  <div className="fact">
-                    <div className="n">{money(finding.impact.downstream.extra_cost_usd)}</div>
-                    <div className="l">Extra cost</div>
+                  <div className="stat">
+                    <span className="n">{money(finding.impact.downstream.extra_cost_usd)}</span>
+                    <span className="l">Extra cost</span>
                   </div>
                 )}
               </div>
@@ -118,10 +116,15 @@ export function FindingDetail() {
 
         {/* Observed vs expected */}
         {finding.observed != null && finding.expected != null && (
-          <div className="callout">
-            <span className="k">{finding.metric}: </span>
-            {fmtMetric(finding.metric, finding.expected)} &rarr; {fmtMetric(finding.metric, finding.observed)}
-          </div>
+          <ComparisonBars
+            label={finding.metric}
+            baseline={finding.expected}
+            baselineLabel="Expected"
+            observed={finding.observed}
+            observedLabel="Observed"
+            format={(v) => fmtMetric(finding.metric, v)}
+            lowerIsWorse={lowerIsWorseFor(finding.metric)}
+          />
         )}
 
         {/* What happened — plain cause */}
@@ -156,15 +159,19 @@ export function FindingDetail() {
             <hr className="divider" />
             <div className="block">
               <h2>Diagnosis</h2>
-              <p>
-                Cause: <strong>{diagnosis.cause_class}</strong>{" "}
-                (confidence {pct(diagnosis.confidence)})
-              </p>
-              {diagnosis.attributed_change && (
-                <p className="muted small">
-                  Attributed to {diagnosis.attributed_change.kind} on day {diagnosis.attributed_change.day}
-                </p>
-              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <RadialStat value={diagnosis.confidence} size={52} strokeWidth={5} />
+                <div>
+                  <p>
+                    Cause: <strong>{diagnosis.cause_class}</strong>
+                  </p>
+                  {diagnosis.attributed_change && (
+                    <p className="muted small">
+                      Attributed to {diagnosis.attributed_change.kind} on day {diagnosis.attributed_change.day}
+                    </p>
+                  )}
+                </div>
+              </div>
               {diagnosis.evidence.length > 0 && (
                 <details className="receipts" style={{ marginTop: 10 }}>
                   <summary />
@@ -214,16 +221,21 @@ export function FindingDetail() {
             <hr className="divider" />
             <div className="block fix">
               <h2>Replay verification</h2>
-              <div className="replay">
-                <div className="fact">
-                  <div className="n">{fmtMetric(verification.metric, verification.before)}</div>
-                  <div className="l">Before</div>
-                </div>
-                <div className="fact">
-                  <div className="n">{fmtMetric(verification.metric, verification.after)}</div>
-                  <div className="l">After</div>
-                </div>
-              </div>
+              <ComparisonBars
+                label={verification.metric}
+                baseline={verification.before}
+                baselineLabel="Before"
+                observed={verification.after}
+                observedLabel="After"
+                format={(v) => fmtMetric(verification.metric, v)}
+                statusOverride={
+                  verification.verdict === "improved"
+                    ? "better"
+                    : verification.verdict === "regressed"
+                    ? "worse"
+                    : "neutral"
+                }
+              />
               <p className="riskline">
                 Verdict: <b>{verification.verdict.replace("_", " ")}</b>
                 {verification.golden_set_pass != null && (
