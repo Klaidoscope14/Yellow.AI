@@ -60,8 +60,7 @@ const css = {
     fontWeight: 650,
     lineHeight: 1,
     cursor: "pointer",
-    boxShadow:
-      "0 12px 35px rgba(0,0,0,.20), 0 3px 10px rgba(0,0,0,.12)",
+    boxShadow: "0 12px 35px rgba(0,0,0,.20), 0 3px 10px rgba(0,0,0,.12)",
     appearance: "none",
     WebkitAppearance: "none",
     outline: "none",
@@ -129,8 +128,7 @@ const css = {
     padding: 1,
     borderRadius: 999,
     background: "#0e0e10",
-    boxShadow:
-      "0 16px 55px rgba(0,0,0,.24), 0 5px 18px rgba(0,0,0,.12)",
+    boxShadow: "0 16px 55px rgba(0,0,0,.24), 0 5px 18px rgba(0,0,0,.12)",
     animation: "nexusInputIn .22s cubic-bezier(.22,1,.36,1)",
   } as CSSProperties,
 
@@ -216,8 +214,7 @@ const css = {
     background: "#fff",
     border: "1px solid #ece9de",
     borderRadius: 20,
-    boxShadow:
-      "0 28px 80px rgba(14,14,16,.20), 0 8px 24px rgba(14,14,16,.10)",
+    boxShadow: "0 28px 80px rgba(14,14,16,.20), 0 8px 24px rgba(14,14,16,.10)",
     animation: "nexusChatIn .24s cubic-bezier(.22,1,.36,1)",
   } as CSSProperties,
 
@@ -365,7 +362,7 @@ export function Chat({ pending }: { pending: number }) {
   const nav = useNavigate();
 
   useEffect(() => {
-    getChatSuggestions().then(setChips).catch(() => { });
+    getChatSuggestions().then(setChips).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -409,26 +406,18 @@ export function Chat({ pending }: { pending: number }) {
         const res = await postChat(value);
         setMsgs((prev) => [
           ...prev,
-          {
-            role: "bot",
-            text: res.answer,
-            refusal: res.refusal,
-            link: res.link,
-          },
+          { role: "bot", text: res.answer, refusal: res.refusal, link: res.link },
         ]);
       } catch {
         setMsgs((prev) => [
           ...prev,
-          {
-            role: "bot",
-            text: "Something went wrong. Please try again.",
-          },
+          { role: "bot", text: "Something went wrong. Please try again." },
         ]);
       } finally {
         setSending(false);
       }
     },
-    [sending]
+    [sending],
   );
 
   const close = () => {
@@ -522,10 +511,7 @@ export function Chat({ pending }: { pending: number }) {
         {mode === "input" && (
           <>
             <div style={css.backdrop} onClick={close} />
-            <div
-              className="nexus-input-mobile"
-              style={css.inputShell}
-            >
+            <div className="nexus-input-mobile" style={css.inputShell}>
               <div style={css.inputInner}>
                 <span style={css.inputIcon}>
                   <Spark size={20} />
@@ -587,23 +573,10 @@ export function Chat({ pending }: { pending: number }) {
                   </span>
 
                   <div>
-                    <div
-                      style={{
-                        color: "#0e0e10",
-                        fontSize: 14,
-                        fontWeight: 750,
-                        lineHeight: 1.2,
-                      }}
-                    >
+                    <div style={{ color: "#0e0e10", fontSize: 14, fontWeight: 750, lineHeight: 1.2 }}>
                       Nexus
                     </div>
-                    <div
-                      style={{
-                        marginTop: 3,
-                        color: "#8a8882",
-                        fontSize: 11,
-                      }}
-                    >
+                    <div style={{ marginTop: 3, color: "#8a8882", fontSize: 11 }}>
                       AI report assistant
                     </div>
                   </div>
@@ -634,10 +607,7 @@ export function Chat({ pending }: { pending: number }) {
                       key={chip}
                       onClick={() => send(chip)}
                       disabled={sending}
-                      style={{
-                        ...css.chip,
-                        opacity: sending ? 0.45 : 1,
-                      }}
+                      style={{ ...css.chip, opacity: sending ? 0.45 : 1 }}
                     >
                       {chip}
                     </button>
@@ -647,14 +617,7 @@ export function Chat({ pending }: { pending: number }) {
 
               <div ref={logRef} style={css.messages}>
                 {msgs.length === 0 && (
-                  <div
-                    style={{
-                      width: 300,
-                      maxWidth: "100%",
-                      margin: "auto",
-                      textAlign: "center",
-                    }}
-                  >
+                  <div style={{ width: 300, maxWidth: "100%", margin: "auto", textAlign: "center" }}>
                     <div
                       style={{
                         width: 48,
@@ -671,27 +634,12 @@ export function Chat({ pending }: { pending: number }) {
                       <Spark size={23} />
                     </div>
 
-                    <h3
-                      style={{
-                        margin: "0 0 6px",
-                        color: "#0e0e10",
-                        fontSize: 15,
-                        fontWeight: 700,
-                      }}
-                    >
+                    <h3 style={{ margin: "0 0 6px", color: "#0e0e10", fontSize: 15, fontWeight: 700 }}>
                       What do you want to know?
                     </h3>
 
-                    <p
-                      style={{
-                        margin: 0,
-                        color: "#6a6864",
-                        fontSize: 12.5,
-                        lineHeight: 1.55,
-                      }}
-                    >
-                      Ask Nexus about findings, risks,
-                      trends, or what needs attention.
+                    <p style={{ margin: 0, color: "#6a6864", fontSize: 12.5, lineHeight: 1.55 }}>
+                      Ask Nexus about findings, risks, trends, or what needs attention.
                     </p>
                   </div>
                 )}
@@ -703,10 +651,7 @@ export function Chat({ pending }: { pending: number }) {
                       display: "flex",
                       gap: 8,
                       maxWidth: "90%",
-                      alignSelf:
-                        msg.role === "user"
-                          ? "flex-end"
-                          : "flex-start",
+                      alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
                     }}
                   >
                     {msg.role === "bot" && (
@@ -719,28 +664,28 @@ export function Chat({ pending }: { pending: number }) {
                       style={
                         msg.role === "user"
                           ? {
-                            padding: "10px 13px",
-                            borderRadius: 14,
-                            borderBottomRightRadius: 4,
-                            background: "#0e0e10",
-                            color: "#fff",
-                            fontSize: 13.5,
-                            lineHeight: 1.5,
-                            overflowWrap: "anywhere",
-                            whiteSpace: "pre-line",
-                          }
+                              padding: "10px 13px",
+                              borderRadius: 14,
+                              borderBottomRightRadius: 4,
+                              background: "#0e0e10",
+                              color: "#fff",
+                              fontSize: 13.5,
+                              lineHeight: 1.5,
+                              overflowWrap: "anywhere",
+                              whiteSpace: "pre-line",
+                            }
                           : {
-                            padding: "10px 13px",
-                            borderRadius: 14,
-                            borderBottomLeftRadius: 4,
-                            border: "1px solid #ece9de",
-                            background: "#f6f4ec",
-                            color: "#0e0e10",
-                            fontSize: 13.5,
-                            lineHeight: 1.5,
-                            overflowWrap: "anywhere",
-                            whiteSpace: "pre-line",
-                          }
+                              padding: "10px 13px",
+                              borderRadius: 14,
+                              borderBottomLeftRadius: 4,
+                              border: "1px solid #ece9de",
+                              background: "#f6f4ec",
+                              color: "#0e0e10",
+                              fontSize: 13.5,
+                              lineHeight: 1.5,
+                              overflowWrap: "anywhere",
+                              whiteSpace: "pre-line",
+                            }
                       }
                     >
                       <div>{msg.text}</div>
@@ -777,13 +722,7 @@ export function Chat({ pending }: { pending: number }) {
                 ))}
 
                 {sending && (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      alignSelf: "flex-start",
-                    }}
-                  >
+                  <div style={{ display: "flex", gap: 8, alignSelf: "flex-start" }}>
                     <span style={css.messageIcon}>
                       <Spark size={13} />
                     </span>
@@ -811,8 +750,7 @@ export function Chat({ pending }: { pending: number }) {
                             height: 5,
                             borderRadius: "50%",
                             background: "#8a8882",
-                            animation:
-                              "nexusDot 1.1s infinite ease-in-out",
+                            animation: "nexusDot 1.1s infinite ease-in-out",
                             animationDelay: `${d * 0.12}s`,
                           }}
                         />
@@ -840,8 +778,7 @@ export function Chat({ pending }: { pending: number }) {
                   disabled={!chatInput.trim() || sending}
                   style={{
                     ...css.composerSend,
-                    opacity:
-                      chatInput.trim() && !sending ? 1 : 0.35,
+                    opacity: chatInput.trim() && !sending ? 1 : 0.35,
                   }}
                   aria-label="Send"
                 >
