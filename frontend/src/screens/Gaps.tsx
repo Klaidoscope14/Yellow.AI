@@ -1,6 +1,6 @@
 import { useReport } from "../hooks/ReportContext";
 import { ASKS } from "../lib/asks";
-import { RadialStat } from "../components/RadialStat";
+import { MetricGauge } from "../components/MetricGauge";
 
 export function Gaps() {
   const { report } = useReport();
@@ -50,23 +50,24 @@ export function Gaps() {
 
       {/* Coverage summary from metrics */}
       {metrics.length > 0 && (
-        <section className="strip">
-          <p className="muted small" style={{ fontWeight: 600, marginBottom: 4 }}>Coverage &amp; Fidelity</p>
-          {metrics.map((m) => (
-            <div className="coverage-row" key={m.id}>
-              <RadialStat value={m.coverage.value} size={40} strokeWidth={4} />
-              <div className="coverage-row-body">
-                <span className="fidelity-badge">{m.fidelity}</span>
-                <span>{m.name ?? m.id}</span>
-                <span className="muted small">
-                  coverage {(m.coverage.value * 100).toFixed(0)}% ({m.coverage.basis})
-                  {m.calibration && (
-                    <> &middot; calibration {(m.calibration.agreement * 100).toFixed(1)}% (n={m.calibration.n})</>
-                  )}
-                </span>
-              </div>
-            </div>
-          ))}
+        <section>
+          <p className="muted small" style={{ fontWeight: 600, marginBottom: 12 }}>Coverage &amp; Fidelity</p>
+          <div className="metric-gauge-grid">
+            {metrics.slice(0, 8).map((m) => (
+              <MetricGauge
+                key={m.id}
+                eyebrow={`${m.fidelity} metric`}
+                title={m.name ?? m.id}
+                indexLabel={`${m.coverage.basis} coverage`}
+                value={m.coverage.value}
+                note={
+                  m.calibration
+                    ? `calibration ${(m.calibration.agreement * 100).toFixed(1)}% (n=${m.calibration.n})`
+                    : undefined
+                }
+              />
+            ))}
+          </div>
         </section>
       )}
 
