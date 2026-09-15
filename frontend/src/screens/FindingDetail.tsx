@@ -12,6 +12,8 @@ import { ComparisonBars } from "../components/ComparisonBars";
 import { PredictedDelta } from "../components/PredictedDelta";
 import type { Audience } from "../api/types";
 
+const SEVERITY_POSITION: Record<string, number> = { low: 12.5, medium: 37.5, high: 62.5, critical: 87.5 };
+
 export function FindingDetail() {
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
@@ -32,7 +34,7 @@ export function FindingDetail() {
       <button className="back" onClick={() => nav("/")}>&larr; Back to Incidents</button>
 
       {/* ---- HERO ---- */}
-      <header className="finding-hero">
+      <header className="finding-hero-card">
         <div className="finding-hero-badges">
           <span className={`pill ${status.cls}`}>{status.label}</span>
           <span className={`sev-label ${finding.severity}`}>
@@ -65,119 +67,138 @@ export function FindingDetail() {
         </div>
       </header>
 
-      {/* ---- IMPACT: one hero number, everything else as inline context.
-              A single stat carries the human-facing headline; secondary
-              facts (traffic share, duration, cost) run as one caption row. */}
-      {finding.impact && (
-        <section className="impact-hero">
-          <div className="impact-hero-primary">
-            <span className="impact-hero-n">{int(finding.impact.conversations_affected)}</span>
-            <span className="impact-hero-l">conversations affected</span>
-          </div>
-          <p className="impact-hero-context">
-            <strong>{pct(finding.impact.share_of_traffic)}</strong> of tenant traffic
-            <span className="sep">&middot;</span>
-            <strong>{finding.impact.days_running} days</strong> running
-            {finding.impact.cost_usd != null && (
-              <>
-                <span className="sep">&middot;</span>
-                <strong>{money(finding.impact.cost_usd)}</strong> total cost
-              </>
-            )}
-          </p>
-        </section>
-      )}
-
-      {/* ---- CLAIM + BAR: no tinted band; typography carries the emphasis */}
-      {finding.observed != null && finding.expected != null && (
-        <section className="finding-block">
-          <p className="claim-sentence">
-            {claimSentence(finding.metric, finding.expected, finding.observed)}
-          </p>
-          <ComparisonBars
-            label={finding.metric}
-            baseline={finding.expected}
-            baselineLabel="Expected"
-            observed={finding.observed}
-            observedLabel="Observed"
-            format={(v) => fmtMetric(finding.metric, v)}
-            lowerIsWorse={lowerIsWorseFor(finding.metric)}
-          />
-        </section>
-      )}
-
-      {/* ---- What happened to these users: sentence only, no duplicate tiles */}
-      {finding.impact?.downstream && usersSentence(finding.impact.downstream) && (
-        <section className="finding-block">
-          <h2>What happened to these users</h2>
-          <p className="lead">{usersSentence(finding.impact.downstream)}</p>
-        </section>
-      )}
-
-      {/* ---- If nobody acts */}
-      {finding.if_nothing_changes && (
-        <section className="finding-block consequence-block">
-          <h2>If nobody acts</h2>
-          <p className="consequence">{finding.if_nothing_changes}</p>
-        </section>
-      )}
-
-      {/* ---- Diagnosis (consolidated with the plain-cause narrative) */}
-      {diagnosis && (
-        <section className="finding-block">
-          <h2>Diagnosis</h2>
-          <p className="lead">{plainCause(diagnosis.cause_class)}</p>
-          <div className="diagnosis-body">
-            <RadialStat value={diagnosis.confidence} size={56} strokeWidth={5} />
-            <div>
-              <p>
-                Cause: <strong>{diagnosis.cause_class}</strong>
-              </p>
-              {diagnosis.attributed_change && (
-                <p className="muted small">
-                  Attributed to {diagnosis.attributed_change.kind} on day {diagnosis.attributed_change.day}
-                </p>
-              )}
-            </div>
-          </div>
-          {diagnosis.evidence.length > 0 && (
-            <details className="receipts" style={{ marginTop: 14 }}>
-              <summary />
-              <div className="body">
-                <ul>
-                  {diagnosis.evidence.map((e, i) => <li key={i}>{e}</li>)}
-                </ul>
+      {/* ---- Two-column bento: narrative on the left, stats + diagnosis on the right ---- */}
+      <div className="finding-grid">
+        <div className="finding-col-main">
+          {/* IMPACT: one hero number, everything else as inline context. */}
+          {finding.impact && (
+            <section className="finding-card impact-card">
+              <div className="impact-hero-primary">
+                <span className="impact-hero-n">{int(finding.impact.conversations_affected)}</span>
+                <span className="impact-hero-l">conversations affected</span>
               </div>
+              <p className="impact-hero-context">
+                <strong>{pct(finding.impact.share_of_traffic)}</strong> of tenant traffic
+                <span className="sep">&middot;</span>
+                <strong>{finding.impact.days_running} days</strong> running
+                {finding.impact.cost_usd != null && (
+                  <>
+                    <span className="sep">&middot;</span>
+                    <strong>{money(finding.impact.cost_usd)}</strong> total cost
+                  </>
+                )}
+              </p>
+            </section>
+          )}
+
+          {/* CLAIM + BAR */}
+          {finding.observed != null && finding.expected != null && (
+            <section className="finding-card">
+              <p className="claim-sentence">
+                {claimSentence(finding.metric, finding.expected, finding.observed)}
+              </p>
+              <ComparisonBars
+                label={finding.metric}
+                baseline={finding.expected}
+                baselineLabel="Expected"
+                observed={finding.observed}
+                observedLabel="Observed"
+                format={(v) => fmtMetric(finding.metric, v)}
+                lowerIsWorse={lowerIsWorseFor(finding.metric)}
+              />
+            </section>
+          )}
+
+          {/* What happened to these users */}
+          {finding.impact?.downstream && usersSentence(finding.impact.downstream) && (
+            <section className="finding-card">
+              <h2>What happened to these users</h2>
+              <p className="lead">{usersSentence(finding.impact.downstream)}</p>
+            </section>
+          )}
+
+          {/* If nobody acts */}
+          {finding.if_nothing_changes && (
+            <section className="finding-card consequence-card">
+              <h2>If nobody acts</h2>
+              <p className="consequence">{finding.if_nothing_changes}</p>
+            </section>
+          )}
+        </div>
+
+        <aside className="finding-col-side">
+          {/* Diagnosis: confidence ring leads, cause + evidence follow */}
+          {diagnosis && (
+            <section className="finding-card diagnosis-card">
+              <h2>Diagnosis</h2>
+              <div className="diagnosis-body">
+                <RadialStat value={diagnosis.confidence} size={64} strokeWidth={6} />
+                <div>
+                  <p className="lead" style={{ marginBottom: 6 }}>{plainCause(diagnosis.cause_class)}</p>
+                  <p>
+                    Cause: <strong>{diagnosis.cause_class}</strong>
+                  </p>
+                  {diagnosis.attributed_change && (
+                    <p className="muted small">
+                      Attributed to {diagnosis.attributed_change.kind} on day {diagnosis.attributed_change.day}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {diagnosis.evidence.length > 0 && (
+                <details className="receipts" style={{ marginTop: 14 }}>
+                  <summary />
+                  <div className="body">
+                    <ul>
+                      {diagnosis.evidence.map((e, i) => <li key={i}>{e}</li>)}
+                    </ul>
+                  </div>
+                </details>
+              )}
+            </section>
+          )}
+
+          {/* Severity spectrum — where this finding sits, at a glance */}
+          <section className="finding-card severity-meter-card">
+            <h2>Severity</h2>
+            <div className="severity-meter">
+              <span className="severity-meter-marker" style={{ left: `${SEVERITY_POSITION[finding.severity]}%` }} />
+            </div>
+            <div className="severity-meter-scale">
+              <span>Low</span>
+              <span>Medium</span>
+              <span>High</span>
+              <span>Critical</span>
+            </div>
+          </section>
+
+          {/* How we computed this */}
+          {finding.impact && (
+            <details className="finding-card inline-receipts">
+              <summary>How we computed this</summary>
+              <p>
+                {finding.impact.derivation.split(/(?<=\.)\s+/).map((sentence, i) =>
+                  /baseline/i.test(sentence) ? (
+                    <strong key={i} className="baseline-highlight">{sentence} </strong>
+                  ) : (
+                    <span key={i}>{sentence} </span>
+                  ),
+                )}
+              </p>
             </details>
           )}
-        </section>
-      )}
 
-      {/* ---- How we computed this — inline collapsible, not a sidebar card */}
-      {finding.impact && (
-        <details className="finding-block inline-receipts">
-          <summary>How we computed this</summary>
-          <p>
-            {finding.impact.derivation.split(/(?<=\.)\s+/).map((sentence, i) =>
-              /baseline/i.test(sentence) ? (
-                <strong key={i} className="baseline-highlight">{sentence} </strong>
-              ) : (
-                <span key={i}>{sentence} </span>
-              ),
-            )}
-          </p>
-        </details>
-      )}
-
-      {/* ---- Evidence chain — inline collapsible */}
-      {finding.evidence.length > 0 && (
-        <details className="finding-block inline-receipts">
-          <summary>Evidence chain</summary>
-          <ul className="evidence-list">
-            {finding.evidence.map((e, i) => <li key={i}>{e}</li>)}
-          </ul>
-        </details>
-      )}
+          {/* Evidence chain */}
+          {finding.evidence.length > 0 && (
+            <details className="finding-card inline-receipts">
+              <summary>Evidence chain</summary>
+              <ul className="evidence-list">
+                {finding.evidence.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+            </details>
+          )}
+        </aside>
+      </div>
 
       {/* ---- PROPOSAL: what Nexus wants to change ---- */}
       {prescription && (

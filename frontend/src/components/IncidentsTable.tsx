@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { diagnosisFor, statusOf } from "../lib/report";
 import { pct, int } from "../lib/format";
 import { useResizableColumns } from "../hooks/useResizableColumns";
@@ -32,6 +33,22 @@ const COLUMNS: ColumnDef[] = [
 ];
 
 const SEVERITY_RANK: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+
+// Rows cascade in rather than appearing as a block. Stagger is tighter than a
+// five-row demo would use: this table routinely runs long.
+const tbodyVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
+};
+
+const rowVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 100, damping: 14 },
+  },
+} as const;
 
 interface Row {
   finding: Finding;
@@ -93,12 +110,14 @@ export function IncidentsTable({ findings, report }: { findings: Finding[]; repo
   const sorted = useMemo(() => sortRows(rows, sortKey, sortDir), [rows, sortKey, sortDir]);
 
   const [focusIdx, setFocusIdx] = useState(0);
+  // the focus ring is only meaningful once the keyboard is actually in use
+  const [kbdActive, setKbdActive] = useState(false);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
 
   useEffect(() => setFocusIdx(0), [findings]);
   useEffect(() => {
-    rowRefs.current[focusIdx]?.scrollIntoView({ block: "nearest" });
-  }, [focusIdx]);
+    if (kbdActive) rowRefs.current[focusIdx]?.scrollIntoView({ block: "nearest" });
+  }, [focusIdx, kbdActive]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -107,18 +126,20 @@ export function IncidentsTable({ findings, report }: { findings: Finding[]; repo
       if (e.key === "j" || e.key === "ArrowDown") {
         if (sorted.length === 0) return;
         e.preventDefault();
+        setKbdActive(true);
         setFocusIdx((i) => Math.min(sorted.length - 1, i + 1));
       } else if (e.key === "k" || e.key === "ArrowUp") {
         if (sorted.length === 0) return;
         e.preventDefault();
+        setKbdActive(true);
         setFocusIdx((i) => Math.max(0, i - 1));
-      } else if (e.key === "Enter" && sorted[focusIdx]) {
+      } else if (e.key === "Enter" && kbdActive && sorted[focusIdx]) {
         nav(`/finding/${sorted[focusIdx].finding.id}`);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sorted, focusIdx, nav]);
+  }, [sorted, focusIdx, kbdActive, nav]);
 
   function toggleSort(key: SortKey) {
     if (key === sortKey) {
@@ -147,7 +168,7 @@ export function IncidentsTable({ findings, report }: { findings: Finding[]; repo
             ))}
             <col style={{ width: 36 }} />
           </colgroup>
-          <thead>
+          <motion.thead initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
             <tr>
               {COLUMNS.map((c) => (
                 <th
@@ -167,13 +188,21 @@ export function IncidentsTable({ findings, report }: { findings: Finding[]; repo
               ))}
               <th aria-hidden />
             </tr>
-          </thead>
-          <tbody>
+          </motion.thead>
+          <motion.tbody
+            variants={tbodyVariants}
+            initial="hidden"
+            animate="visible"
+            onMouseMove={() => kbdActive && setKbdActive(false)}
+          >
             {sorted.map((row, i) => (
-              <tr
+              <motion.tr
                 key={row.finding.id}
-                ref={(el) => (rowRefs.current[i] = el)}
-                className={i === focusIdx ? "kbd-focused" : ""}
+                variants={rowVariants}
+                ref={(el: HTMLTableRowElement | null) => {
+                  rowRefs.current[i] = el;
+                }}
+                className={kbdActive && i === focusIdx ? "kbd-focused" : ""}
                 onClick={() => nav(`/finding/${row.finding.id}`)}
               >
                 <td>
@@ -189,9 +218,9 @@ export function IncidentsTable({ findings, report }: { findings: Finding[]; repo
                 <td className="num">{row.impact != null ? int(row.impact) : "—"}</td>
                 <td className="num">{row.running != null ? `${row.running}d` : "—"}</td>
                 <td className="chevron-cell"><ChevronRightIcon size={15} /></td>
-              </tr>
+              </motion.tr>
             ))}
-          </tbody>
+          </motion.tbody>
         </table>
       </div>
     </div>
