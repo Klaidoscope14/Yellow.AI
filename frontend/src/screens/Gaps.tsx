@@ -9,14 +9,14 @@ export function Gaps() {
   const { gaps, metrics } = report;
 
   return (
-    <>
-      <p className="statusline">
-        Measurement gaps &mdash; <span className="em">refused</span>
-      </p>
-      <p className="section-title">
-        These operator questions cannot be answered with the data available.
-        We refuse rather than invent a number.
-      </p>
+    <div className="page-container page-container-wide">
+      <div className="page-header">
+        <h1>Diagnostics</h1>
+        <p>
+          {gaps.length} question{gaps.length !== 1 ? "s" : ""} we can&rsquo;t answer with the current data.
+          What&rsquo;s needed to answer each is listed below.
+        </p>
+      </div>
 
       {gaps.map((g) => (
         <div className="refusal" key={g.ask_id}>
@@ -75,6 +75,6 @@ export function Gaps() {
           All operator questions can be answered with available data.
         </p>
       )}
-    </>
+    </div>
   );
 }

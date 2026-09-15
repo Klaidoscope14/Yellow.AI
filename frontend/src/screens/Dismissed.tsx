@@ -9,14 +9,14 @@ export function Dismissed() {
   const items = dismissed(report);
 
   return (
-    <>
-      <p className="statusline">
-        Examined &mdash; <span className="em">not regressions</span>
-      </p>
-      <p className="section-title">
-        We examined {items.length} suspicious pattern{items.length !== 1 ? "s" : ""} and cleared them.
-        Precision is a designed outcome.
-      </p>
+    <div className="page-container page-container-wide">
+      <div className="page-header">
+        <h1>Lookalikes</h1>
+        <p>
+          {items.length} pattern{items.length !== 1 ? "s" : ""} looked like regressions and weren&rsquo;t.
+          Here&rsquo;s why each one was cleared.
+        </p>
+      </div>
 
       <div className="strip">
         {items.map((f) => (
@@ -54,6 +54,6 @@ export function Dismissed() {
           No patterns were examined and dismissed.
         </p>
       )}
-    </>
+    </div>
   );
 }

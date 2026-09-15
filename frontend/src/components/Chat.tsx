@@ -56,16 +56,27 @@ export function Chat({ pending }: { pending: number }) {
 
   return (
     <>
+      {/* Center-bottom floating launcher, Yellow.ai "Talk to Alex"-style —
+          avatar + speech-bubble copy + waveform icon. On hover it lifts. */}
       <button
         className="chat-launcher"
         onClick={() => setOpen((v) => !v)}
         aria-label="Ask about this report"
       >
-        <Icon size={21} strokeWidth={1.9}>
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </Icon>
-        {pending > 0 && <span className="chat-badge">{pending}</span>}
-        <span className="chat-status-dot" aria-hidden />
+        <span className="chat-launcher-hint">Ask a question</span>
+        <span className="chat-launcher-pill">
+          <span className="chat-avatar">
+            <Icon size={17} strokeWidth={2}>
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
+            </Icon>
+          </span>
+          <span className="chat-launcher-copy">Nexus</span>
+          <span className="chat-launcher-wave" aria-hidden>
+            <span></span><span></span><span></span><span></span>
+          </span>
+          {pending > 0 && <span className="chat-badge">{pending}</span>}
+        </span>
       </button>
 
       {open && (
@@ -73,7 +84,7 @@ export function Chat({ pending }: { pending: number }) {
           <div className="chat-scrim" onClick={() => setOpen(false)} />
           <div className="chat-sheet">
             <div className="chat-header">
-              <span>Ask about this report</span>
+              <span>Nexus</span>
               <button className="chat-close" onClick={() => setOpen(false)}>Close</button>
             </div>
 
