@@ -27,10 +27,11 @@ export function Decisions() {
   const sa = report.self_assessment;
 
   return (
-    <>
-      <p className="statusline">
-        Decision history &amp; <span className="em">self-assessment</span>
-      </p>
+    <div className="page-container page-container-wide">
+      <div className="page-header">
+        <h1>Decisions</h1>
+        <p>Every decision recorded. Every fix scored against what actually happened.</p>
+      </div>
 
       {/* Decision audit trail */}
       <section>
@@ -151,6 +152,6 @@ export function Decisions() {
           </details>
         )}
       </section>
-    </>
+    </div>
   );
 }
