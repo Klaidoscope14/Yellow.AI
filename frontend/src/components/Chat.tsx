@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getChatSuggestions, postChat } from "../api/client";
 import { Icon } from "./Icon";
@@ -348,16 +341,11 @@ function Spark({ size = 18 }: { size?: number }) {
 }
 
 export function Chat({ pending }: { pending: number }) {
-  const [mode, setMode] = useState<Mode>("button");
-  const [input, setInput] = useState("");
-  const [chatInput, setChatInput] = useState("");
+  const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
-  const [chips, setChips] = useState<string[]>([]);
+  const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [placeholder, setPlaceholder] = useState(0);
-
-  const inputRef = useRef<HTMLInputElement>(null);
-  const chatInputRef = useRef<HTMLInputElement>(null);
+  const [chips, setChips] = useState<string[]>([]);
   const logRef = useRef<HTMLDivElement>(null);
   const nav = useNavigate();
 
@@ -366,411 +354,97 @@ export function Chat({ pending }: { pending: number }) {
   }, []);
 
   useEffect(() => {
-    if (mode !== "input") return;
-    const id = window.setInterval(() => {
-      setPlaceholder((p) => (p + 1) % PLACEHOLDERS.length);
-    }, 2600);
-    return () => window.clearInterval(id);
-  }, [mode]);
+    logRef.current?.scrollTo(0, logRef.current.scrollHeight);
+  }, [msgs]);
 
-  useEffect(() => {
-    if (mode === "input") {
-      const id = window.setTimeout(() => inputRef.current?.focus(), 80);
-      return () => window.clearTimeout(id);
-    }
-    if (mode === "chat" && !sending) {
-      const id = window.setTimeout(() => chatInputRef.current?.focus(), 80);
-      return () => window.clearTimeout(id);
-    }
-  }, [mode, sending]);
-
-  useEffect(() => {
-    logRef.current?.scrollTo({
-      top: logRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [msgs, sending]);
-
-  const send = useCallback(
-    async (question: string) => {
-      const value = question.trim();
-      if (!value || sending) return;
-
-      setInput("");
-      setChatInput("");
-      setMsgs((prev) => [...prev, { role: "user", text: value }]);
-      setMode("chat");
-      setSending(true);
-
-      try {
-        const res = await postChat(value);
-        setMsgs((prev) => [
-          ...prev,
-          { role: "bot", text: res.answer, refusal: res.refusal, link: res.link },
-        ]);
-      } catch {
-        setMsgs((prev) => [
-          ...prev,
-          { role: "bot", text: "Something went wrong. Please try again." },
-        ]);
-      } finally {
-        setSending(false);
-      }
-    },
-    [sending],
-  );
-
-  const close = () => {
-    setMode("button");
+  const send = useCallback(async (question: string) => {
+    if (!question.trim()) return;
+    setMsgs((prev) => [...prev, { role: "user", text: question }]);
     setInput("");
-    setChatInput("");
-  };
+    setSending(true);
+    try {
+      const res = await postChat(question);
+      setMsgs((prev) => [
+        ...prev,
+        { role: "bot", text: res.answer, refusal: res.refusal, link: res.link },
+      ]);
+    } catch {
+      setMsgs((prev) => [...prev, { role: "bot", text: "Something went wrong." }]);
+    } finally {
+      setSending(false);
+    }
+  }, []);
 
-  const handleLink = (link: ChatResponse["link"]) => {
+  function handleLink(link: ChatResponse["link"]) {
     if (!link) return;
     if (link.screen === "finding" && link.id) nav(`/finding/${link.id}`);
     else if (link.screen === "refusals") nav("/gaps");
     else if (link.screen === "dismissed") nav("/dismissed");
-    close();
-  };
-
-  const handleInputKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (input.trim()) send(input);
-    }
-    if (e.key === "Escape") close();
-  };
-
-  const handleChatKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (chatInput.trim()) send(chatInput);
-    }
-    if (e.key === "Escape") close();
-  };
+    setOpen(false);
+  }
 
   return (
     <>
-      <style>{`
-        @keyframes nexusInputIn {
-          from { opacity: 0; transform: translateX(-50%) translateY(10px) scale(.98); }
-          to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-        }
-        @keyframes nexusChatIn {
-          from { opacity: 0; transform: translateX(-50%) translateY(14px) scale(.98); }
-          to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-        }
-        @keyframes nexusDot {
-          0%,70%,100% { opacity:.3; transform:translateY(0); }
-          35% { opacity:1; transform:translateY(-3px); }
-        }
-        @media (max-width:760px) {
-          .nexus-window-mobile {
-            left:12px !important;
-            right:12px !important;
-            bottom:12px !important;
-            width:auto !important;
-            max-width:none !important;
-            height:calc(100vh - 24px) !important;
-            transform:none !important;
-          }
-          .nexus-input-mobile {
-            width:calc(100vw - 24px) !important;
-            max-width:none !important;
-            bottom:16px !important;
-          }
-          .nexus-launcher-mobile {
-            bottom:16px !important;
-          }
-        }
-      `}</style>
+      {/* Center-bottom floating launcher, Yellow.ai "Talk to Alex"-style —
+          avatar + speech-bubble copy + waveform icon. On hover it lifts. */}
+      <button
+        className="chat-launcher"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Ask about this report"
+      >
+        <span className="chat-launcher-hint">Ask a question</span>
+        <span className="chat-launcher-pill">
+          <span className="chat-avatar">
+            <Icon size={17} strokeWidth={2}>
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
+            </Icon>
+          </span>
+          <span className="chat-launcher-copy">Nexus</span>
+          <span className="chat-launcher-wave" aria-hidden>
+            <span></span><span></span><span></span><span></span>
+          </span>
+          {pending > 0 && <span className="chat-badge">{pending}</span>}
+        </span>
+      </button>
 
-      <div style={css.root}>
-        {mode === "button" && (
-          <button
-            type="button"
-            className="nexus-launcher-mobile"
-            onClick={() => setMode("input")}
-            style={css.launcher}
-            aria-label="Ask Nexus"
-          >
-            <span style={css.launcherIcon}>
-              <Spark />
-            </span>
-            <span>Ask Nexus</span>
-            <span style={css.launcherArrow}>
-              <Icon size={15} strokeWidth={2}>
-                <path d="M7 10l5 5 5-5" />
-              </Icon>
-            </span>
-            {pending > 0 && <span style={css.badge}>{pending}</span>}
-          </button>
-        )}
-
-        {mode === "input" && (
-          <>
-            <div style={css.backdrop} onClick={close} />
-            <div className="nexus-input-mobile" style={css.inputShell}>
-              <div style={css.inputInner}>
-                <span style={css.inputIcon}>
-                  <Spark size={20} />
-                </span>
-
-                <input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleInputKey}
-                  placeholder={PLACEHOLDERS[placeholder]}
-                  aria-label="Ask Nexus"
-                  style={css.input}
-                />
-
-                <button
-                  type="button"
-                  onClick={close}
-                  style={css.iconButton}
-                  aria-label="Close"
-                >
-                  <Icon size={17} strokeWidth={2}>
-                    <path d="M6 6l12 12M18 6L6 18" />
-                  </Icon>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => send(input)}
-                  disabled={!input.trim() || sending}
-                  style={{
-                    ...css.send,
-                    opacity: input.trim() && !sending ? 1 : 0.3,
-                  }}
-                  aria-label="Send"
-                >
-                  <Icon size={18} strokeWidth={2.2}>
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                  </Icon>
-                </button>
-              </div>
+      {open && (
+        <>
+          <div className="chat-scrim" onClick={() => setOpen(false)} />
+          <div className="chat-sheet">
+            <div className="chat-header">
+              <span>Nexus</span>
+              <button className="chat-close" onClick={() => setOpen(false)}>Close</button>
             </div>
-          </>
-        )}
 
-        {mode === "chat" && (
-          <>
-            <div style={css.backdrop} onClick={close} />
-
-            <section
-              className="nexus-window-mobile"
-              style={css.window}
-              aria-label="Nexus AI assistant"
-            >
-              <header style={css.header}>
-                <div style={css.headerLeft}>
-                  <span style={css.headerIcon}>
-                    <Spark size={17} />
-                  </span>
-
-                  <div>
-                    <div style={{ color: "#0e0e10", fontSize: 14, fontWeight: 750, lineHeight: 1.2 }}>
-                      Nexus
-                    </div>
-                    <div style={{ marginTop: 3, color: "#8a8882", fontSize: 11 }}>
-                      AI report assistant
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={close}
-                  style={{
-                    ...css.iconButton,
-                    background: "#f6f4ec",
-                    color: "#6a6864",
-                    border: "1px solid #ece9de",
-                  }}
-                  aria-label="Close chat"
-                >
-                  <Icon size={17} strokeWidth={2}>
-                    <path d="M6 6l12 12M18 6L6 18" />
-                  </Icon>
-                </button>
-              </header>
-
-              {chips.length > 0 && (
-                <div style={css.suggestions}>
-                  {chips.map((chip) => (
-                    <button
-                      type="button"
-                      key={chip}
-                      onClick={() => send(chip)}
-                      disabled={sending}
-                      style={{ ...css.chip, opacity: sending ? 0.45 : 1 }}
-                    >
-                      {chip}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div ref={logRef} style={css.messages}>
-                {msgs.length === 0 && (
-                  <div style={{ width: 300, maxWidth: "100%", margin: "auto", textAlign: "center" }}>
-                    <div
-                      style={{
-                        width: 48,
-                        height: 48,
-                        margin: "0 auto 13px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: "50%",
-                        background: "#fff6cf",
-                        color: "#201a00",
-                      }}
-                    >
-                      <Spark size={23} />
-                    </div>
-
-                    <h3 style={{ margin: "0 0 6px", color: "#0e0e10", fontSize: 15, fontWeight: 700 }}>
-                      What do you want to know?
-                    </h3>
-
-                    <p style={{ margin: 0, color: "#6a6864", fontSize: 12.5, lineHeight: 1.55 }}>
-                      Ask Nexus about findings, risks, trends, or what needs attention.
-                    </p>
-                  </div>
-                )}
-
-                {msgs.map((msg, i) => (
-                  <div
-                    key={`${msg.role}-${i}`}
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      maxWidth: "90%",
-                      alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-                    }}
-                  >
-                    {msg.role === "bot" && (
-                      <span style={css.messageIcon}>
-                        <Spark size={13} />
-                      </span>
-                    )}
-
-                    <div
-                      style={
-                        msg.role === "user"
-                          ? {
-                              padding: "10px 13px",
-                              borderRadius: 14,
-                              borderBottomRightRadius: 4,
-                              background: "#0e0e10",
-                              color: "#fff",
-                              fontSize: 13.5,
-                              lineHeight: 1.5,
-                              overflowWrap: "anywhere",
-                              whiteSpace: "pre-line",
-                            }
-                          : {
-                              padding: "10px 13px",
-                              borderRadius: 14,
-                              borderBottomLeftRadius: 4,
-                              border: "1px solid #ece9de",
-                              background: "#f6f4ec",
-                              color: "#0e0e10",
-                              fontSize: 13.5,
-                              lineHeight: 1.5,
-                              overflowWrap: "anywhere",
-                              whiteSpace: "pre-line",
-                            }
-                      }
-                    >
-                      <div>{msg.text}</div>
-
-                      {msg.link && (
-                        <button
-                          type="button"
-                          onClick={() => handleLink(msg.link!)}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 5,
-                            marginTop: 8,
-                            padding: 0,
-                            border: 0,
-                            background: "transparent",
-                            color: "#0e0e10",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            textDecoration: "underline",
-                            textDecorationColor: "#ffce00",
-                            textUnderlineOffset: 3,
-                          }}
-                        >
-                          Go to {msg.link.screen}
-                          <Icon size={13} strokeWidth={2}>
-                            <path d="M5 12h14M13 6l6 6-6 6" />
-                          </Icon>
-                        </button>
-                      )}
-                    </div>
-                  </div>
+            {chips.length > 0 && (
+              <div className="chat-chips">
+                {chips.map((c) => (
+                  <button key={c} className="chip" onClick={() => send(c)}>
+                    {c}
+                  </button>
                 ))}
-
-                {sending && (
-                  <div style={{ display: "flex", gap: 8, alignSelf: "flex-start" }}>
-                    <span style={css.messageIcon}>
-                      <Spark size={13} />
-                    </span>
-
-                    <div
-                      style={{
-                        minWidth: 56,
-                        height: 38,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 4,
-                        padding: "0 12px",
-                        border: "1px solid #ece9de",
-                        borderRadius: 14,
-                        borderBottomLeftRadius: 4,
-                        background: "#f6f4ec",
-                      }}
-                    >
-                      {[0, 1, 2].map((d) => (
-                        <span
-                          key={d}
-                          style={{
-                            width: 5,
-                            height: 5,
-                            borderRadius: "50%",
-                            background: "#8a8882",
-                            animation: "nexusDot 1.1s infinite ease-in-out",
-                            animationDelay: `${d * 0.12}s`,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
+            )}
 
-              <div style={css.composer}>
-                <input
-                  ref={chatInputRef}
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={handleChatKey}
-                  placeholder="Ask a follow-up…"
-                  disabled={sending}
-                  aria-label="Ask a follow-up"
-                  style={css.composerInput}
-                />
+            <div className="chat-log" ref={logRef}>
+              {msgs.length === 0 && (
+                <p className="muted small" style={{ textAlign: "center", padding: 20 }}>
+                  Ask a question about the report. Answers come from computed data only.
+                </p>
+              )}
+              {msgs.map((m, i) => (
+                <div key={i} className={`msg ${m.role}${m.refusal ? " refusal-msg" : ""}`}>
+                  {m.text}
+                  {m.link && (
+                    <button className="jump" onClick={() => handleLink(m.link!)}>
+                      Go to {m.link.screen} &rsaquo;
+                    </button>
+                  )}
+                </div>
+              ))}
+              {sending && <div className="msg bot muted">Thinking&hellip;</div>}
+            </div>
 
                 <button
                   type="button"
