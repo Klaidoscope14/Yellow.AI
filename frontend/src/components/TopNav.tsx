@@ -1,20 +1,14 @@
-import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { CircleAlert, Users, Wrench, Lightbulb } from "lucide-react";
 import { NexusWordmark } from "./NexusWordmark";
 
 const LINKS = [
-  { to: "/", label: "Incidents", end: true, icon: CircleAlert },
-  { to: "/dismissed", label: "Lookalikes", end: false, icon: Users },
-  { to: "/gaps", label: "Diagnostics", end: false, icon: Wrench },
-  { to: "/decisions", label: "Decisions", end: false, icon: Lightbulb },
+  { to: "/", label: "Incidents", end: true },
+  { to: "/dismissed", label: "Lookalikes", end: false },
+  { to: "/gaps", label: "Diagnostics", end: false },
+  { to: "/decisions", label: "Decisions", end: false },
 ];
 
 export function TopNav({ team, pending }: { team: string; pending: number }) {
-  // While one tab is hovered, every other tab — including the active one —
-  // collapses back to its icon circle, so only one is ever expanded at a time.
-  const [hovered, setHovered] = useState<string | null>(null);
-
   return (
     <header className="topnav">
       <div className="topnav-inner">
@@ -26,25 +20,10 @@ export function TopNav({ team, pending }: { team: string; pending: number }) {
           </div>
         </div>
 
-        <nav className="topnav-links" onMouseLeave={() => setHovered(null)}>
+        <nav className="topnav-links">
           {LINKS.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              end={l.end}
-              aria-label={l.label}
-              onMouseEnter={() => setHovered(l.to)}
-              className={({ isActive }) =>
-                [
-                  isActive ? "active" : "",
-                  hovered === l.to ? "expanded" : hovered ? "minimized" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")
-              }
-            >
-              <span className="tab-icon"><l.icon size={15} strokeWidth={2.2} aria-hidden /></span>
-              <span className="tab-label">{l.label}</span>
+            <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => (isActive ? "active" : "")}>
+              {l.label}
             </NavLink>
           ))}
         </nav>
