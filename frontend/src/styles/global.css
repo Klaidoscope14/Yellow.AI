@@ -1082,6 +1082,151 @@ a:focus-visible,
   color: var(--text);
 }
 
+/* Lookalikes: the row behind the open drawer stays clearly marked as
+   selected — bolder than the keyboard-focus ring elsewhere, since this
+   one persists for as long as the drawer is open, not just a transient
+   nav cue. Built from the theme's own accent, not a literal color swap. */
+.incidents-table tbody tr.lookalike-row--selected {
+  background-color: var(--accent-weak);
+  box-shadow: inset 4px 0 0 0 var(--accent);
+}
+
+.incidents-table tbody tr.lookalike-row--selected:hover {
+  background-color: var(--accent-weak);
+}
+
+/* Lookalikes: clicking a row opens a right-side drawer with why it was
+   cleared, instead of expanding the row in place. */
+.lookalike-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(14, 14, 16, .32);
+  backdrop-filter: blur(3px);
+}
+
+.lookalike-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 56;
+  width: 686px;
+  max-width: calc(100vw - 32px);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.lookalike-drawer-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.lookalike-drawer-eyebrow {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.lookalike-drawer-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-subtle);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+
+.lookalike-drawer-close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.lookalike-drawer-body {
+  padding: 22px 24px 40px;
+}
+
+.lookalike-drawer-title {
+  font: 700 var(--fs-19)/1.4 var(--font-display);
+  letter-spacing: -.01em;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.lookalike-drawer-meta {
+  font-size: var(--fs-13);
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+
+.lookalike-drawer-section {
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+}
+
+.lookalike-drawer-section:first-of-type {
+  padding-top: 0;
+  border-top: none;
+  margin-top: 0;
+}
+
+.lookalike-drawer-section h3 {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.lookalike-drawer-section p {
+  font-size: var(--fs-14);
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.lookalike-drawer-section ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lookalike-drawer-section li {
+  font-size: var(--fs-13);
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+@media (max-width: 560px) {
+  .lookalike-drawer {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
 /* ---------------------------------------------------------------- strip / accordion */
 .strip {
   margin-top: 20px;
@@ -2347,6 +2492,153 @@ details.inline-receipts>p {
   border-radius: 4px;
   padding: 1px 5px;
   font-size: 12px;
+}
+
+/* ---------------------------------------------------------------- metric gauge
+   Diagnostics coverage cards — arc gauge + description, in the theme's
+   pink/magenta (the --accent-gradient's mid-to-late stops) rather than
+   a flat accent, so it reads as its own moment, not a duplicate of the
+   violet CTAs. */
+.metric-gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .metric-gauge-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 620px) {
+  .metric-gauge-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metric-gauge-card {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid #e8a9c6;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease);
+}
+
+.metric-gauge-card:hover {
+  transform: translateY(-3px) scale(1.02);
+  border-color: #e8628f;
+  box-shadow: 0 10px 28px rgba(232, 98, 143, .18), 0 2px 6px rgba(14, 14, 16, .06);
+}
+
+.metric-gauge-eyebrow {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.metric-gauge-title {
+  font-size: var(--fs-16);
+  font-weight: 750;
+  color: var(--text);
+  letter-spacing: -.01em;
+  margin: 0 0 14px;
+}
+
+.metric-gauge-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 1;
+}
+
+.metric-gauge-index-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metric-gauge-index-label {
+  font-size: var(--fs-13);
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.metric-gauge-note {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.metric-gauge-arc-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.metric-gauge-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: var(--surface);
+  border: 1px solid #e8a9c6;
+  color: #b8306f;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-sm);
+  z-index: 1;
+}
+
+.metric-gauge-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 14px;
+}
+
+.metric-gauge-center-label {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-tertiary);
+  font-weight: 700;
+}
+
+.metric-gauge-center-value {
+  font: 800 var(--fs-19)/1 var(--font-body);
+  color: var(--text);
+  letter-spacing: -.02em;
+  margin-top: 2px;
+}
+
+.metric-gauge-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-12);
+  color: var(--muted);
+}
+
+.metric-gauge-footer strong {
+  color: var(--text);
 }
 
 .section-title {
