@@ -57,7 +57,7 @@ export function MetricGauge({ eyebrow, title, indexLabel, value, note }: MetricG
               cx={center}
               cy={center}
               r={r}
-              stroke="var(--accent)"
+              stroke="#e8628f"
               strokeWidth={strokeWidth}
               fill="none"
               strokeDasharray={`${progressLen} ${c - progressLen}`}
