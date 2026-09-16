@@ -66,10 +66,11 @@
   /* drawn from the same brand gradient family as --accent-gradient
      (violet → magenta → pink → gold), reordered light-to-alarming so the
      escalation still reads correctly at a glance, not just recolored */
-  --sev-critical: #c81e56;
-  --sev-high: #d9639a;
-  --sev-medium: #d9a233;
-  --sev-low: #a79bc4;
+  /* traffic-light escalation: bright red = most severe, bright green = least */
+  --sev-critical: #ea1f1f;
+  --sev-high: #B000DC;
+  --sev-medium: #00B894;
+  --sev-low: #1e7a34;
 
   /* semantic KPI palette — Nexus product uses lavender/green/yellow/red for
      its pill accents; we keep this system-wide reusable */
@@ -340,6 +341,7 @@ a:focus-visible,
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .topnav-links a,
   .tab-icon,
   .tab-label {
@@ -457,7 +459,7 @@ a:focus-visible,
   margin-bottom: 22px;
 }
 
-.incidents-stat-row > * {
+.incidents-stat-row>* {
   flex: 1 1 0;
   min-width: 0;
 }
@@ -1028,15 +1030,13 @@ a:focus-visible,
    on a <tr> doesn't reliably establish (it escapes to some ancestor and
    floats mid-table instead of tracking its own row). */
 .incidents-table tbody tr:not(:last-child) {
-  background-image: linear-gradient(
-    to right,
-    transparent 0,
-    transparent 20px,
-    rgba(14, 14, 16, .08) 20px,
-    rgba(14, 14, 16, .08) calc(100% - 20px),
-    transparent calc(100% - 20px),
-    transparent 100%
-  );
+  background-image: linear-gradient(to right,
+      transparent 0,
+      transparent 20px,
+      rgba(14, 14, 16, .08) 20px,
+      rgba(14, 14, 16, .08) calc(100% - 20px),
+      transparent calc(100% - 20px),
+      transparent 100%);
   background-repeat: no-repeat;
   background-position: bottom;
   background-size: 100% 1px;
@@ -2116,7 +2116,7 @@ details.inline-receipts>p {
   overflow: hidden;
 }
 
-.severity-donut-legend-bar > span {
+.severity-donut-legend-bar>span {
   display: block;
   height: 100%;
   border-radius: 2px;
@@ -2502,7 +2502,7 @@ details.inline-receipts>p {
   -webkit-backdrop-filter: url("#ai-glass");
 }
 
-.ai-shell > .ai-panel-body {
+.ai-shell>.ai-panel-body {
   position: relative;
   z-index: 1;
 }
@@ -2515,7 +2515,7 @@ details.inline-receipts>p {
    flow always — it needs content to actually determine its height (a
    multi-line message, the orb + send button row), not be locked to
    whatever size the shell happens to be. */
-.ai-shell > .ai-trigger {
+.ai-shell>.ai-trigger {
   position: absolute;
   inset: 0;
   z-index: 1;
