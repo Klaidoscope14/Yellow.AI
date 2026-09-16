@@ -1,12 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, CircleCheck, ShieldCheck, CircleHelp } from "lucide-react";
 import { useReport } from "../hooks/ReportContext";
-import { regressions, dismissed, needsDecisionCount } from "../lib/report";
+import { regressions, dismissed, needsDecisionCount, statusOf } from "../lib/report";
 import { SearchIcon } from "../components/Icon";
 import { useCountUp } from "../hooks/useCountUp";
 import { IncidentsTable } from "../components/IncidentsTable";
+import { SeverityDonut } from "../components/SeverityDonut";
+import type { Severity } from "../api/types";
 
 const SEVERITIES = ["critical", "high", "medium", "low"] as const;
 
@@ -172,6 +174,19 @@ export function ControlCenter() {
 
   const regs = useMemo(() => (report ? regressions(report) : []), [report]);
   const dism = useMemo(() => (report ? dismissed(report) : []), [report]);
+  const sevCounts = useMemo(() => {
+    const counts: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0 };
+    for (const f of regs) counts[f.severity]++;
+    return counts;
+  }, [regs]);
+  const pendingBySeverity = useMemo(() => {
+    if (!report) return {};
+    const counts: Partial<Record<Severity, number>> = {};
+    for (const f of regs) {
+      if (statusOf(report, f).cls === "needs") counts[f.severity] = (counts[f.severity] ?? 0) + 1;
+    }
+    return counts;
+  }, [report, regs]);
 
   const filtered = useMemo(() => {
     return regs.filter((f) => (sevFilter ? f.severity === sevFilter : true)).filter((f) => {
@@ -193,7 +208,7 @@ export function ControlCenter() {
         <h1>Incidents</h1>
         <p>
           {pending > 0 ? (
-            <><span className="eyebrow-accent" style={{ fontWeight: 700 }}>Needs attention.</span> Everything on this page is computed from the report.</>
+            <><span className="needs-pill">Needs attention</span> Everything on this page is computed from the report.</>
           ) : (
             <><span className="eyebrow-ok" style={{ fontWeight: 700 }}>All clear.</span> Nothing awaiting your call right now.</>
           )}
@@ -208,19 +223,24 @@ export function ControlCenter() {
             <KpiHero pending={pending} bySeverity={pendingBySeverity} lookalikes={dism.length} />
           )}
 
-      <p className="kpi-context">
-        <strong>{regs.length}</strong> found
-        <span className="sep">&middot;</span>
-        <strong>{dism.length}</strong> cleared
-        {verified > 0 && (
-          <>
-            <span className="sep">&middot;</span>
-            <strong>{verified}</strong> verified
-          </>
-        )}
-        <span className="sep">&middot;</span>
-        <strong>{report.gaps.length}</strong> refused
-      </p>
+          <div className="outcomes-card">
+            <h2>Outcomes</h2>
+            <motion.ul
+              className="outcome-list"
+              variants={statGroupVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <OutcomeRow n={regs.length} label="Found" icon={Search} tone="neutral" />
+              <OutcomeRow n={dism.length} label="Cleared" icon={CircleCheck} tone="ok" />
+              {verified > 0 && <OutcomeRow n={verified} label="Verified" icon={ShieldCheck} tone="ok" />}
+              <OutcomeRow n={report.gaps.length} label="Refused" icon={CircleHelp} tone="pending" />
+            </motion.ul>
+          </div>
+        </div>
+
+        {regs.length > 0 && <SeverityDonut counts={sevCounts} />}
+      </div>
 
       <div className="filter-bar">
         <div className="search-input-wrap">
@@ -232,20 +252,11 @@ export function ControlCenter() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <div className="seg-pills">
-          <button className={`seg-pill${sevFilter === null ? " active" : ""}`} onClick={() => setSevFilter(null)}>
-            All ({regs.length})
-          </button>
-          {SEVERITIES.map((s) => (
-            <button
-              key={s}
-              className={`seg-pill${sevFilter === s ? " active" : ""}`}
-              onClick={() => setSevFilter(sevFilter === s ? null : s)}
-            >
-              {s[0].toUpperCase() + s.slice(1)}
-            </button>
-          ))}
-        </div>
+        <SeverityFilter
+          value={sevFilter}
+          onChange={(v) => setSevFilter(v === sevFilter ? null : v)}
+          counts={{ all: regs.length }}
+        />
       </div>
 
       <IncidentsTable findings={filtered} report={report} />

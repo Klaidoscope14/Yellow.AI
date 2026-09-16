@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { diagnosisFor, statusOf } from "../lib/report";
 import { pct, int } from "../lib/format";
 import { useResizableColumns } from "../hooks/useResizableColumns";
@@ -21,7 +22,7 @@ interface ColumnDef {
 // container: total sits well inside that width so nothing is cut off.
 // (Title stays generous with wrap; numeric columns tight; severity/status
 // stateful pills sized to their content.)
-const ALL_COLUMNS: ColumnDef[] = [
+const COLUMNS: ColumnDef[] = [
   { key: "severity", label: "Severity", width: 96, sortable: true },
   { key: "title", label: "Incident", width: 340, sortable: false },
   { key: "context", label: "Tenant · Intent", width: 190, sortable: true },
@@ -102,29 +103,9 @@ function sortRows(rows: Row[], key: SortKey, dir: SortDir): Row[] {
   });
 }
 
-const DEFAULT_VISIBLE: SortKey[] = ALL_COLUMNS.map((c) => c.key);
-
-export function IncidentsTable({
-  findings,
-  report,
-  visibleColumns = DEFAULT_VISIBLE,
-  onSelect,
-}: {
-  findings: Finding[];
-  report: Report;
-  visibleColumns?: SortKey[];
-  /** When provided, row clicks call this instead of navigating to the full finding page. */
-  onSelect?: (finding: Finding) => void;
-}) {
+export function IncidentsTable({ findings, report }: { findings: Finding[]; report: Report }) {
   const nav = useNavigate();
-  const openFinding = (finding: Finding) => (onSelect ? onSelect(finding) : nav(`/finding/${finding.id}`));
-  const showSeverity = visibleColumns.includes("severity");
-  const showStatus = visibleColumns.includes("status");
-  const showConfidence = visibleColumns.includes("confidence");
-  const showImpact = visibleColumns.includes("impact");
-  const showRunning = visibleColumns.includes("running");
-  const COLUMNS = ALL_COLUMNS.filter((c) => visibleColumns.includes(c.key));
-  const [sortKey, setSortKey] = useState<SortKey>(COLUMNS.find((c) => c.sortable)?.key ?? "title");
+  const [sortKey, setSortKey] = useState<SortKey>("severity");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const { widths, startResize } = useResizableColumns(
     Object.fromEntries(COLUMNS.map((c) => [c.key, c.width])),
@@ -134,6 +115,8 @@ export function IncidentsTable({
   const sorted = useMemo(() => sortRows(rows, sortKey, sortDir), [rows, sortKey, sortDir]);
 
   const [focusIdx, setFocusIdx] = useState(0);
+  // the focus ring is only meaningful once the keyboard is actually in use
+  const [kbdActive, setKbdActive] = useState(false);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [capPx, setCapPx] = useState<number | undefined>(undefined);
@@ -159,8 +142,8 @@ export function IncidentsTable({
 
   useEffect(() => setFocusIdx(0), [findings]);
   useEffect(() => {
-    rowRefs.current[focusIdx]?.scrollIntoView({ block: "nearest" });
-  }, [focusIdx]);
+    if (kbdActive) rowRefs.current[focusIdx]?.scrollIntoView({ block: "nearest" });
+  }, [focusIdx, kbdActive]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -169,18 +152,20 @@ export function IncidentsTable({
       if (e.key === "j" || e.key === "ArrowDown") {
         if (sorted.length === 0) return;
         e.preventDefault();
+        setKbdActive(true);
         setFocusIdx((i) => Math.min(sorted.length - 1, i + 1));
       } else if (e.key === "k" || e.key === "ArrowUp") {
         if (sorted.length === 0) return;
         e.preventDefault();
+        setKbdActive(true);
         setFocusIdx((i) => Math.max(0, i - 1));
-      } else if (e.key === "Enter" && sorted[focusIdx]) {
-        openFinding(sorted[focusIdx].finding);
+      } else if (e.key === "Enter" && kbdActive && sorted[focusIdx]) {
+        nav(`/finding/${sorted[focusIdx].finding.id}`);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sorted, focusIdx, onSelect, nav]);
+  }, [sorted, focusIdx, kbdActive, nav]);
 
   function toggleSort(key: SortKey) {
     if (key === sortKey) {
@@ -213,7 +198,7 @@ export function IncidentsTable({
             ))}
             <col style={{ width: 36 }} />
           </colgroup>
-          <thead>
+          <motion.thead initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
             <tr>
               {COLUMNS.map((c) => (
                 <th
@@ -233,41 +218,39 @@ export function IncidentsTable({
               ))}
               <th aria-hidden />
             </tr>
-          </thead>
-          <tbody>
+          </motion.thead>
+          <motion.tbody
+            variants={tbodyVariants}
+            initial="hidden"
+            animate="visible"
+            onMouseMove={() => kbdActive && setKbdActive(false)}
+          >
             {sorted.map((row, i) => (
-              <tr
+              <motion.tr
                 key={row.finding.id}
-                ref={(el) => (rowRefs.current[i] = el)}
-                className={i === focusIdx ? "kbd-focused" : ""}
-                onClick={() => openFinding(row.finding)}
+                variants={rowVariants}
+                ref={(el: HTMLTableRowElement | null) => {
+                  rowRefs.current[i] = el;
+                }}
+                className={kbdActive && i === focusIdx ? "kbd-focused" : ""}
+                onClick={() => nav(`/finding/${row.finding.id}`)}
               >
-                {showSeverity && (
-                  <td>
-                    <span className={`sev-dot ${row.finding.severity}`} />
-                    <span className={`sev-label ${row.finding.severity}`}>{row.finding.severity}</span>
-                  </td>
-                )}
+                <td>
+                  <span className={`sev-dot ${row.finding.severity}`} />
+                  <span className={`sev-label ${row.finding.severity}`}>{row.finding.severity}</span>
+                </td>
                 <td className="title-cell">{row.finding.plain_summary}</td>
                 <td className="muted">{row.context}</td>
-                {showStatus && (
-                  <td>
-                    <span className={`pill ${row.statusCls}`}>{row.statusLabel}</span>
-                  </td>
-                )}
-                {showConfidence && (
-                  <td className="num">{row.confidence != null ? pct(row.confidence) : "—"}</td>
-                )}
-                {showImpact && (
-                  <td className="num">{row.impact != null ? int(row.impact) : "—"}</td>
-                )}
-                {showRunning && (
-                  <td className="num">{row.running != null ? `${row.running}d` : "—"}</td>
-                )}
+                <td>
+                  <span className={`pill ${row.statusCls}`}>{row.statusLabel}</span>
+                </td>
+                <td className="num">{row.confidence != null ? pct(row.confidence) : "—"}</td>
+                <td className="num">{row.impact != null ? int(row.impact) : "—"}</td>
+                <td className="num">{row.running != null ? `${row.running}d` : "—"}</td>
                 <td className="chevron-cell"><ChevronRightIcon size={15} /></td>
-              </tr>
+              </motion.tr>
             ))}
-          </tbody>
+          </motion.tbody>
         </table>
       </div>
     </div>
