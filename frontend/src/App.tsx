@@ -34,7 +34,7 @@ export function App() {
         </Routes>
       </main>
 
-      <Chat pending={pending} />
+      <Chat />
       <CommandPalette />
     </div>
   );
