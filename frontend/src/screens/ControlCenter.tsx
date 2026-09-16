@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, CircleCheck, ShieldCheck, CircleHelp, AlertTriangle } from "lucide-react";
+import { Search, CircleCheck, ShieldCheck, CircleHelp } from "lucide-react";
 import { useReport } from "../hooks/ReportContext";
 import { regressions, dismissed, needsDecisionCount, statusOf } from "../lib/report";
 import { SearchIcon } from "../components/Icon";
@@ -118,30 +118,50 @@ function SeverityFilter({
 // make up the pending count) instead of a bare number in an empty box;
 // the number itself is vertically centered in the remaining space so it
 // uses the card's full height the way its siblings' content does.
-function KpiHero({ pending, bySeverity }: { pending: number; bySeverity: Partial<Record<Severity, number>> }) {
+function KpiHero({
+  pending,
+  bySeverity,
+  lookalikes,
+}: {
+  pending: number;
+  bySeverity: Partial<Record<Severity, number>>;
+  lookalikes: number;
+}) {
+  const nav = useNavigate();
   const shown = useCountUp(pending);
+  const lookalikesShown = useCountUp(lookalikes);
   const breakdown = SEVERITIES.filter((s) => bySeverity[s]);
   return (
     <div className="kpi-hero">
-      <div className="kpi-hero-top">
-        <span className="kpi-hero-icon">
-          <AlertTriangle size={15} strokeWidth={2.4} aria-hidden />
-        </span>
+      <div className="kpi-hero-section">
+        <div className="kpi-hero-main">
+          <span className="kpi-hero-n">{shown}</span>
+          <span className="kpi-hero-l">{pending === 1 ? "fix awaiting your call" : "fixes awaiting your call"}</span>
+        </div>
         {breakdown.length > 0 && (
-          <span className="kpi-hero-sevs">
+          <div className="kpi-hero-sevs">
             {breakdown.map((s) => (
               <span key={s} className="kpi-hero-sev">
                 <span className={`sev-dot ${s}`} />
                 {bySeverity[s]} {s}
               </span>
             ))}
-          </span>
+          </div>
         )}
       </div>
-      <div className="kpi-hero-main">
-        <span className="kpi-hero-n">{shown}</span>
-        <span className="kpi-hero-l">{pending === 1 ? "fix awaiting your call" : "fixes awaiting your call"}</span>
-      </div>
+
+      <div className="kpi-hero-divider" />
+
+      <button
+        className="kpi-hero-section kpi-hero-section--link"
+        onClick={() => nav("/dismissed")}
+        disabled={lookalikes === 0}
+      >
+        <div className="kpi-hero-main">
+          <span className="kpi-hero-n">{lookalikesShown}</span>
+          <span className="kpi-hero-l">{lookalikes === 1 ? "lookalike cleared" : "lookalikes cleared"}</span>
+        </div>
+      </button>
     </div>
   );
 }
@@ -199,7 +219,9 @@ export function ControlCenter() {
           the other column, stretching to match their combined height. */}
       <div className="incidents-stat-row">
         <div className="incidents-stat-col">
-          {pending > 0 && <KpiHero pending={pending} bySeverity={pendingBySeverity} />}
+          {pending > 0 && (
+            <KpiHero pending={pending} bySeverity={pendingBySeverity} lookalikes={dism.length} />
+          )}
 
           <div className="outcomes-card">
             <h2>Outcomes</h2>

@@ -2,42 +2,53 @@
    Design principle #1 — CHROME VS TYPOGRAPHY: a box/pill is reserved for
    things that are interactive or hold live state. Descriptive metadata is
    plain typography with separators, never a border.
-   Palette: soft warm-white ground, brand yellow (#FFCE00) as the primary
-   accent, deep near-black for the floating nav pill and headings, and a
-   semantic hue set (violet/green/amber/blue) reused system-wide instead
-   of one-off tile decoration. A serif display face carries the few big
-   headlines; body stays a modern sans. Motion is short and quiet. */
+   Palette: soft violet-tinted ground with a light mesh-gradient wash,
+   deep indigo-violet as the primary accent, near-black ink for the
+   floating nav pill and headings, and a semantic hue set (red/amber/
+   green/blue) reused system-wide instead of one-off tile decoration —
+   deliberately untouched by the rebrand so severity and status still
+   read correctly against the new accent. A serif display face carries
+   the few big headlines; body stays a modern sans. Motion is short and
+   quiet. */
 :root {
-  --bg: #fbfaf6;
-  --bg-subtle: #f3f1ea;
-  --bg-right: #fbfaf6;
+  --bg: #faf9ff;
+  --bg-subtle: #f1eefb;
+  --bg-right: #faf9ff;
   --surface: #ffffff;
-  --surface-hover: #f6f4ec;
-  --text: #0e0e10;
-  --muted: #6a6864;
-  --text-tertiary: #a09e98;
-  --border: #ece9de;
-  --border-strong: #dcd8ca;
+  --surface-hover: #f5f2fc;
+  --text: #14101f;
+  --muted: #6b6478;
+  --text-tertiary: #a29cb0;
+  --border: #e8e2f5;
+  --border-strong: #d8cdf0;
 
   /* the floating navigation pill — Nexus-style */
-  --ink: #0e0e10;
-  --ink-soft: #1a1a1e;
-  --ink-hover: #2b2b30;
+  --ink: #14101f;
+  --ink-soft: #1e1830;
+  --ink-hover: #322a47;
   --on-ink: #ffffff;
-  --on-ink-muted: #a5a4a8;
+  --on-ink-muted: #a79fbd;
 
-  --dark-pill-bg: #0e0e10;
+  --dark-pill-bg: #14101f;
   --dark-pill-ink: #ffffff;
 
-  /* Yellow.ai brand yellow — primary accent, used on CTAs, active states,
+  /* Primary accent — a rich indigo-violet, used on CTAs, active states,
      the KPI headline hue, and the chat launcher */
-  --accent: #ffce00;
-  --accent-hover: #f5c400;
-  --accent-ink: #0e0e10;
-  --accent-weak: #fff6cf;
-  --accent-border: #ffe98a;
-  /* text-on-yellow-bg reads warm dark — separate token so text stays legible */
-  --brand-ink: #201a00;
+  --accent: #6e56cf;
+  --accent-hover: #5b45c4;
+  --accent-ink: #ffffff;
+  --accent-weak: #f1ecfb;
+  --accent-border: #d9cdf5;
+  /* the theme's actual signature: violet through magenta through gold in
+     one continuous blend, not three flat colors — used on the surfaces
+     that should read as unmistakably "the brand" (primary CTAs, active
+     nav, the chat launcher), while severity/status pills stay flat and
+     semantic so they're never ambiguous next to something this rich */
+  --accent-gradient: linear-gradient(135deg, #6e56cf 0%, #b83aa8 50%, #e8628f 100%);
+  --accent-gradient-hover: linear-gradient(135deg, #5f49b3 0%, #a13296 50%, #d1567f 100%);
+  /* text-on-accent-bg: the accent is mid-dark now (not pale yellow), so
+     this reads white instead of warm-dark */
+  --brand-ink: #ffffff;
 
   --reject: #d84a3a;
   --reject-weak: #fbeeec;
@@ -45,17 +56,20 @@
   --ok: #17864b;
   --ok-weak: #e3f5ea;
 
-  --status-needs-bg: #fff2b0;
-  --status-needs-ink: #5a4400;
+  --status-needs-bg: #fbe4b6;
+  --status-needs-ink: #7a4a06;
   --status-ok-bg: #ddf1e2;
   --status-ok-ink: #0f6a3a;
   --status-rej-bg: #eee9dd;
   --status-rej-ink: #4c4a44;
 
-  --sev-critical: #d84a3a;
-  --sev-high: #e46a20;
-  --sev-medium: #b0851e;
-  --sev-low: #8b8983;
+  /* drawn from the same brand gradient family as --accent-gradient
+     (violet → magenta → pink → gold), reordered light-to-alarming so the
+     escalation still reads correctly at a glance, not just recolored */
+  --sev-critical: #c81e56;
+  --sev-high: #d9639a;
+  --sev-medium: #d9a233;
+  --sev-low: #a79bc4;
 
   /* semantic KPI palette — Nexus product uses lavender/green/yellow/red for
      its pill accents; we keep this system-wide reusable */
@@ -63,8 +77,8 @@
   --sem-volume-bg: #f1ecfb;
   --sem-resolved: #17864b;
   --sem-resolved-bg: #e3f5ea;
-  --sem-pending: #b47d00;
-  --sem-pending-bg: #fff2b0;
+  --sem-pending: #a06a00;
+  --sem-pending-bg: #fbe4b6;
   --sem-info: #1d54c7;
   --sem-info-bg: #ebf1fc;
 
@@ -76,7 +90,7 @@
   --shadow: 0 4px 16px rgba(14, 14, 16, .07), 0 1px 2px rgba(14, 14, 16, .04);
   --shadow-lg: 0 -10px 34px rgba(14, 14, 16, .14);
   --shadow-nav: 0 8px 24px rgba(14, 14, 16, .18);
-  --shadow-yellow: 0 6px 20px rgba(255, 206, 0, .32);
+  --shadow-yellow: 0 6px 20px rgba(110, 86, 207, .32);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-glass: cubic-bezier(0.32, 0.72, 0, 1);
   --maxw: 760px;
@@ -117,6 +131,27 @@ body {
   font: 15.5px/1.55 var(--font-body);
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* soft mesh-gradient wash — fixed to the viewport so it reads as ambient
+   light behind the app rather than scrolling with the page. Low opacity
+   throughout so cards and text stay fully legible; only shows through in
+   the negative space around content, the way it does in the reference. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 780px 620px at 4% -6%, rgba(110, 86, 207, .30), transparent 58%),
+    radial-gradient(ellipse 680px 560px at 100% 4%, rgba(219, 39, 160, .22), transparent 56%),
+    radial-gradient(ellipse 640px 560px at 108% 22%, rgba(235, 140, 205, .22), transparent 55%),
+    radial-gradient(ellipse 640px 560px at -8% 66%, rgba(99, 91, 219, .22), transparent 55%),
+    radial-gradient(ellipse 760px 640px at 104% 102%, rgba(184, 58, 168, .18), transparent 55%),
+    radial-gradient(ellipse 560px 480px at 30% 98%, rgba(219, 39, 160, .14), transparent 55%),
+    var(--bg);
 }
 
 ::selection {
@@ -263,8 +298,8 @@ a:focus-visible,
 
 .topnav-links a.active {
   color: var(--brand-ink);
-  background: var(--accent);
-  box-shadow: 0 0 0 1px rgba(255, 206, 0, .3), 0 0 16px 2px rgba(255, 206, 0, .45);
+  background: var(--accent-gradient);
+  box-shadow: 0 0 0 1px rgba(110, 86, 207, .3), 0 0 16px 2px rgba(232, 98, 143, .4);
 }
 
 /* icon and label sit stacked in the same spot and crossfade */
@@ -441,6 +476,11 @@ a:focus-visible,
 
 /* every screen opens on a bold statement heading — sized for confident
    identity without dwarfing the content it introduces */
+/* a colorful gradient card, not just a plain heading — this is where the
+   rebrand's palette actually shows up in the content area, since dense
+   data pages leave little background gutter for the page-wide wash to
+   show through. Opacity stays low so heading/body text needs no color
+   override on any of the pages that share this class. */
 .page-header {
   margin-bottom: 28px;
 }
@@ -467,7 +507,7 @@ a:focus-visible,
   padding: 3px 12px;
   margin-right: 4px;
   border-radius: var(--radius-pill);
-  background: var(--accent);
+  background: var(--accent-gradient);
   color: var(--brand-ink);
   font-weight: 700;
   font-size: inherit;
@@ -476,15 +516,15 @@ a:focus-visible,
 
 @keyframes needsPulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(255, 206, 0, .5);
+    box-shadow: 0 0 0 0 rgba(110, 86, 207, .5);
   }
 
   70% {
-    box-shadow: 0 0 0 9px rgba(255, 206, 0, 0);
+    box-shadow: 0 0 0 9px rgba(110, 86, 207, 0);
   }
 
   100% {
-    box-shadow: 0 0 0 0 rgba(255, 206, 0, 0);
+    box-shadow: 0 0 0 0 rgba(110, 86, 207, 0);
   }
 }
 
@@ -618,39 +658,59 @@ a:focus-visible,
 
 /* KPI card: same neutral surface as its siblings — yellow is now an
    accent (the icon chip + a left edge marker), not a full-card wash. */
+/* Two sections sharing one card — the pending count on the left, the
+   dismissed-lookalike count on the right — instead of one number with a
+   lot of unused space next to it. */
 .kpi-hero {
   display: flex;
-  flex-direction: column;
-  padding: 16px 20px;
-  background: var(--surface);
+  align-items: stretch;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  background: var(--surface);
 }
 
-.kpi-hero-top {
+.kpi-hero-section {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  padding: 16px 20px;
+  text-align: left;
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  transition: background .15s var(--ease);
 }
 
-.kpi-hero-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.kpi-hero-section:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.kpi-hero-section--link {
+  cursor: pointer;
+}
+
+.kpi-hero-section--link:disabled {
+  cursor: default;
+}
+
+.kpi-hero-divider {
+  width: 1px;
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--accent-weak);
-  color: var(--sem-pending);
+  align-self: stretch;
+  background: var(--border);
 }
 
+/* secondary detail, so it sits below the number with real separation
+   instead of crowding it as if the two carried equal weight */
 .kpi-hero-sevs {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  margin-top: 10px;
 }
 
 .kpi-hero-sev {
@@ -668,10 +728,8 @@ a:focus-visible,
 }
 
 .kpi-hero-main {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
 .kpi-hero-n {
@@ -697,10 +755,10 @@ a:focus-visible,
   display: flex;
   flex-direction: column;
   padding: 16px 18px;
-  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+  background: var(--surface);
 }
 
 .outcomes-card h2 {
@@ -1957,10 +2015,10 @@ details.inline-receipts>p {
   display: flex;
   flex-direction: column;
   padding: 16px 18px;
-  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+  background: var(--surface);
 }
 
 .severity-donut-card h2 {
@@ -2195,14 +2253,14 @@ details.inline-receipts>p {
 }
 
 .btn.approve {
-  background: var(--accent);
+  background: var(--accent-gradient);
   color: var(--brand-ink);
-  box-shadow: 0 4px 14px rgba(255, 206, 0, .28);
+  box-shadow: 0 4px 14px rgba(110, 86, 207, .28);
 }
 
 .btn.approve:hover:not(:disabled) {
-  background: var(--accent-hover);
-  box-shadow: 0 6px 20px rgba(255, 206, 0, .35);
+  background: var(--accent-gradient-hover);
+  box-shadow: 0 6px 20px rgba(232, 98, 143, .35);
   filter: none;
 }
 
@@ -2705,7 +2763,7 @@ details.inline-receipts>p {
   height: 32px;
   min-width: 32px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-gradient);
   border: none;
   display: flex;
   align-items: center;
@@ -2716,7 +2774,7 @@ details.inline-receipts>p {
 }
 
 .ai-bar-send:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: var(--accent-gradient-hover);
   transform: scale(1.08);
 }
 
