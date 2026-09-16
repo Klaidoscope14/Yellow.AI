@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { diagnosisFor, statusOf } from "../lib/report";
@@ -33,6 +33,11 @@ const COLUMNS: ColumnDef[] = [
 ];
 
 const SEVERITY_RANK: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+
+// Rows wrap to a variable number of lines (the title cell), so a fixed
+// row-height assumption would be wrong. Measure where row 6 actually
+// starts and cap the scroll container there — the rest scrolls.
+const VISIBLE_ROWS = 5;
 
 // Rows cascade in rather than appearing as a block. Stagger is tighter than a
 // five-row demo would use: this table routinely runs long.
@@ -113,6 +118,27 @@ export function IncidentsTable({ findings, report }: { findings: Finding[]; repo
   // the focus ring is only meaningful once the keyboard is actually in use
   const [kbdActive, setKbdActive] = useState(false);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [capPx, setCapPx] = useState<number | undefined>(undefined);
+
+  const measureCap = () => {
+    const scrollEl = scrollRef.current;
+    const cutoffRow = rowRefs.current[VISIBLE_ROWS];
+    if (!scrollEl || !cutoffRow) {
+      setCapPx(undefined);
+      return;
+    }
+    const height =
+      cutoffRow.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop;
+    setCapPx(height);
+  };
+
+  useLayoutEffect(measureCap, [sorted]);
+
+  useEffect(() => {
+    window.addEventListener("resize", measureCap);
+    return () => window.removeEventListener("resize", measureCap);
+  }, []);
 
   useEffect(() => setFocusIdx(0), [findings]);
   useEffect(() => {
@@ -160,7 +186,11 @@ export function IncidentsTable({ findings, report }: { findings: Finding[]; repo
 
   return (
     <div className="incidents-table-wrap">
-      <div className="incidents-table-scroll">
+      <div
+        className="incidents-table-scroll"
+        ref={scrollRef}
+        style={capPx != null ? { maxHeight: capPx } : undefined}
+      >
         <table className="incidents-table">
           <colgroup>
             {COLUMNS.map((c) => (

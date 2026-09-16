@@ -2357,6 +2357,7 @@ details.inline-receipts>p {
   position: relative;
   width: 118px;
   min-height: 40px;
+  max-height: 40px;
   max-width: calc(100vw - 32px);
   background: rgba(255, 255, 255, .55);
   backdrop-filter: blur(14px) saturate(185%);
@@ -2383,6 +2384,7 @@ details.inline-receipts>p {
   transition:
     width .38s var(--ease-glass),
     min-height .38s var(--ease-glass),
+    max-height .38s var(--ease-glass),
     border-radius .38s var(--ease-glass),
     box-shadow .25s var(--ease),
     background .25s var(--ease);
@@ -2391,6 +2393,11 @@ details.inline-receipts>p {
 .ai-shell--open {
   width: 460px;
   min-height: 84px;
+  /* tight to actual content (orb+textarea row + toolbar row + padding is
+     ~85-90px) with just enough headroom for a couple of wrapped lines. A
+     concrete number, not `none`, so this still animates cleanly against
+     the other states' max-height instead of snapping */
+  max-height: 130px;
   border-radius: 22px;
   background: rgba(255, 255, 255, .68);
 }
@@ -2398,7 +2405,11 @@ details.inline-receipts>p {
 /* conversation state: the same glass surface grows upward */
 .ai-shell--chat {
   width: 560px;
+  /* min + max pinned to the same value caps it — same technique as the
+     other states, so this animates instead of snapping, and .chat-log
+     scrolls internally past this point rather than the shell growing */
   min-height: min(62vh, 520px);
+  max-height: min(62vh, 520px);
   border-radius: 26px;
   background: rgba(255, 255, 255, .78);
 }
@@ -2433,9 +2444,22 @@ details.inline-receipts>p {
   -webkit-backdrop-filter: url("#ai-glass");
 }
 
-.ai-shell > .ai-panel-body,
-.ai-shell > .ai-trigger {
+.ai-shell > .ai-panel-body {
   position: relative;
+  z-index: 1;
+}
+
+/* the collapsed "Ask AI" label overlays the panel's position instead of
+   taking its own layout slot — during their brief crossfade this lets the
+   label fade in directly on top of the panel as it fades out, rather than
+   one fully unmounting before the other appears (which left the shrinking
+   shell empty for a beat mid-close). The panel itself stays in normal
+   flow always — it needs content to actually determine its height (a
+   multi-line message, the orb + send button row), not be locked to
+   whatever size the shell happens to be. */
+.ai-shell > .ai-trigger {
+  position: absolute;
+  inset: 0;
   z-index: 1;
 }
 
@@ -2472,11 +2496,11 @@ details.inline-receipts>p {
   height: 30px;
   border-radius: 50%;
   overflow: hidden;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .92), rgba(246, 240, 255, .5));
+  background: radial-gradient(circle at 50% 50%, rgba(255, 250, 225, .95), rgba(255, 236, 180, .55));
   box-shadow:
-    0 0 12px rgba(168, 85, 247, .26),
-    0 0 22px rgba(56, 165, 255, .15),
-    0 1px 4px rgba(40, 20, 80, .10);
+    0 0 12px rgba(255, 200, 20, .3),
+    0 0 22px rgba(255, 150, 60, .16),
+    0 1px 4px rgba(120, 90, 10, .10);
 }
 
 /* wide, soft colour clouds — diffuse rather than polished */
@@ -2491,17 +2515,17 @@ details.inline-receipts>p {
 
 .ai-orb-a {
   background:
-    radial-gradient(circle at 30% 32%, rgba(103, 232, 249, .95) 0%, rgba(103, 232, 249, 0) 52%),
-    radial-gradient(circle at 70% 34%, rgba(129, 165, 255, .9) 0%, rgba(129, 165, 255, 0) 54%),
-    radial-gradient(circle at 50% 74%, rgba(196, 141, 255, .9) 0%, rgba(196, 141, 255, 0) 56%);
+    radial-gradient(circle at 30% 32%, rgba(230, 224, 30, .95) 0%, rgba(230, 224, 30, 0) 52%),
+    radial-gradient(circle at 70% 34%, rgba(255, 168, 18, .9) 0%, rgba(255, 168, 18, 0) 54%),
+    radial-gradient(circle at 50% 74%, rgba(190, 214, 26, .9) 0%, rgba(190, 214, 26, 0) 56%);
   animation: orbSwirlA 7s linear infinite;
 }
 
 .ai-orb-b {
   background:
-    radial-gradient(circle at 66% 62%, rgba(255, 138, 196, .9) 0%, rgba(255, 138, 196, 0) 52%),
-    radial-gradient(circle at 34% 66%, rgba(255, 178, 130, .85) 0%, rgba(255, 178, 130, 0) 50%),
-    radial-gradient(circle at 56% 26%, rgba(255, 255, 255, .8) 0%, rgba(255, 255, 255, 0) 42%);
+    radial-gradient(circle at 66% 62%, rgba(232, 160, 225, .9) 0%, rgba(232, 160, 225, 0) 52%),
+    radial-gradient(circle at 34% 66%, rgba(255, 253, 240, .85) 0%, rgba(255, 253, 240, 0) 50%),
+    radial-gradient(circle at 56% 26%, rgba(222, 190, 255, .8) 0%, rgba(222, 190, 255, 0) 42%);
   animation: orbSwirlB 10s linear infinite reverse;
 }
 
