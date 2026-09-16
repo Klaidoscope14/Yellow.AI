@@ -7,9 +7,10 @@
    floating nav pill and headings, and a semantic hue set (red/amber/
    green/blue) reused system-wide instead of one-off tile decoration —
    deliberately untouched by the rebrand so severity and status still
-   read correctly against the new accent. A serif display face carries
-   the few big headlines; body stays a modern sans. Motion is short and
-   quiet. */
+   read correctly against the new accent. One typeface — the system UI
+   font (San Francisco on Apple platforms) — is used everywhere, carried
+   by a single four-level scale: large title, title, subtitle, body.
+   Motion is short and quiet. */
 :root {
   --bg: #faf9ff;
   --bg-subtle: #f1eefb;
@@ -96,9 +97,10 @@
   --ease-glass: cubic-bezier(0.32, 0.72, 0, 1);
   --maxw: 760px;
 
-  /* type — modern geometric sans for body/UI, serif kept for editorial H1 */
-  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  /* type — one system font everywhere (San Francisco on Apple devices,
+     its cross-platform equivalents elsewhere), no serif, no second family */
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-body);
   --fs-11: .6875rem;
   --fs-12: .75rem;
   --fs-13: .8125rem;
@@ -109,6 +111,17 @@
   --fs-32: 2rem;
   --fs-42: 2.625rem;
   --fs-56: 3.5rem;
+
+  /* Apple-style four-level hierarchy. Every heading/label/body string in
+     the app should resolve to one of these four — nothing in between. */
+  --lh-tight: 1.15;
+  --large-title: 700 var(--fs-32)/1.15 var(--font-display);
+  --large-title-tracking: -.015em;
+  --title: 700 var(--fs-19)/1.3 var(--font-display);
+  --title-tracking: -.005em;
+  --subtitle: 700 var(--fs-11)/1.3 var(--font-body);
+  --subtitle-tracking: .07em;
+  --body: 400 var(--fs-14)/1.55 var(--font-body);
 }
 
 * {
@@ -356,23 +369,54 @@ a:focus-visible,
   justify-self: end;
 }
 
-.topnav-status {
-  font-size: 12px;
-  font-weight: 700;
+/* compact live indicator — a plain "Live" button with an always-blinking
+   dot, so it doesn't compete for attention with the active-tab gradient
+   right next to it */
+.topnav-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   padding: 6px 12px;
   border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
   letter-spacing: -.005em;
   white-space: nowrap;
+  cursor: default;
 }
 
-.topnav-status.needs {
+.topnav-live-dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
   background: var(--accent);
-  color: var(--brand-ink);
+  animation: liveBlink 1.8s ease-in-out infinite;
 }
 
-.topnav-status.ok {
-  background: var(--status-ok-bg);
-  color: var(--status-ok-ink);
+@keyframes liveBlink {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(110, 86, 207, .5);
+  }
+
+  50% {
+    opacity: .5;
+  }
+
+  70% {
+    box-shadow: 0 0 0 5px rgba(110, 86, 207, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topnav-live-dot {
+    animation: none;
+  }
 }
 
 .topnav-shortcuts {
@@ -452,26 +496,20 @@ a:focus-visible,
    that stretch to fill the row together. Flex, not fixed widths pinned to
    opposite edges — with 2 or 3 cards present, each grows to take its fair
    share, so there's never leftover width for a gap to form in. */
-.incidents-stat-row {
+.issues-stat-row {
   display: flex;
   align-items: stretch;
   gap: 16px;
   margin-bottom: 22px;
 }
 
-.incidents-stat-row>* {
+.issues-stat-row>* {
   flex: 1 1 0;
   min-width: 0;
 }
 
-.incidents-stat-col {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
 @media (max-width: 860px) {
-  .incidents-stat-row {
+  .issues-stat-row {
     flex-direction: column;
   }
 }
@@ -678,6 +716,7 @@ a:focus-visible,
   min-width: 0;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   padding: 16px 20px;
   text-align: left;
   background: none;
@@ -718,7 +757,7 @@ a:focus-visible,
 .kpi-hero-sev {
   display: inline-flex;
   align-items: center;
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
@@ -746,102 +785,6 @@ a:focus-visible,
   color: var(--muted);
   font-weight: 600;
   margin-top: 4px;
-}
-
-/* Outcomes card: found / cleared / verified / refused as rows inside one
-   card (matching the KPI and severity cards' chrome), each with its own
-   icon chip and semantic tone instead of one undifferentiated sentence.
-   The list centers vertically so it uses the card's full stretched height
-   instead of leaving dead air below the last row. */
-.outcomes-card {
-  display: flex;
-  flex-direction: column;
-  padding: 16px 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  background: var(--surface);
-}
-
-.outcomes-card h2 {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--muted);
-  margin: 0 0 4px;
-  font-weight: 700;
-}
-
-.outcome-list {
-  flex: 1;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.outcome-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 7px 0;
-  border-top: 1px solid var(--border);
-}
-
-.outcome-row:first-child {
-  border-top: none;
-}
-
-.outcome-icon {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.outcome-label {
-  flex: 1;
-  font-size: var(--fs-12);
-  font-weight: 600;
-  color: var(--text);
-}
-
-.outcome-n {
-  font-weight: 800;
-  font-size: var(--fs-14);
-  font-variant-numeric: tabular-nums;
-}
-
-.outcome-row--neutral .outcome-icon {
-  background: var(--bg-subtle);
-  color: var(--muted);
-}
-
-.outcome-row--neutral .outcome-n {
-  color: var(--text);
-}
-
-.outcome-row--ok .outcome-icon {
-  background: var(--status-ok-bg);
-  color: var(--status-ok-ink);
-}
-
-.outcome-row--ok .outcome-n {
-  color: var(--status-ok-ink);
-}
-
-.outcome-row--pending .outcome-icon {
-  background: var(--accent-weak);
-  color: var(--sem-pending);
-}
-
-.outcome-row--pending .outcome-n {
-  color: var(--sem-pending);
 }
 
 /* ---------------------------------------------------------------- search + severity filter (interactive → keeps chrome) */
@@ -938,7 +881,7 @@ a:focus-visible,
    The primary work surface on the app. Rounded card, sticky header on a
    soft tint, sortable + resizable columns, generous row padding, keyboard
    focus ring. Numbers right-aligned like any real data table. */
-.incidents-table-wrap {
+.issues-table-wrap {
   margin: 6px 0 28px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -947,25 +890,25 @@ a:focus-visible,
   box-shadow: var(--shadow-sm);
 }
 
-.incidents-table-scroll {
+.issues-table-scroll {
   max-height: 64vh;
   overflow: auto;
 }
 
-.incidents-table {
+.issues-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
   font-size: var(--fs-13);
 }
 
-.incidents-table thead th {
+.issues-table thead th {
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--bg-subtle);
   text-align: left;
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
   letter-spacing: .06em;
   font-weight: 700;
@@ -977,12 +920,12 @@ a:focus-visible,
   white-space: nowrap;
 }
 
-.incidents-table thead th:hover {
+.issues-table thead th:hover {
   color: var(--text);
 }
 
-.incidents-table th.num,
-.incidents-table td.num {
+.issues-table th.num,
+.issues-table td.num {
   text-align: right;
 }
 
@@ -1019,7 +962,7 @@ a:focus-visible,
   background: var(--accent);
 }
 
-.incidents-table tbody tr {
+.issues-table tbody tr {
   cursor: pointer;
   transition: background-color .12s var(--ease);
 }
@@ -1029,7 +972,7 @@ a:focus-visible,
    pseudo-element, which needs a containing block that `position: relative`
    on a <tr> doesn't reliably establish (it escapes to some ancestor and
    floats mid-table instead of tracking its own row). */
-.incidents-table tbody tr:not(:last-child) {
+.issues-table tbody tr:not(:last-child) {
   background-image: linear-gradient(to right,
       transparent 0,
       transparent 20px,
@@ -1042,43 +985,43 @@ a:focus-visible,
   background-size: 100% 1px;
 }
 
-.incidents-table tbody tr:hover {
+.issues-table tbody tr:hover {
   background-color: var(--surface-hover);
 }
 
-.incidents-table tbody tr.kbd-focused {
+.issues-table tbody tr.kbd-focused {
   background-color: var(--accent-weak);
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
-.incidents-table td {
+.issues-table td {
   padding: 19px 14px;
   vertical-align: middle;
   color: var(--text);
 }
 
-.incidents-table td.title-cell {
+.issues-table td.title-cell {
   white-space: normal;
   line-height: 1.5;
   font-weight: 550;
 }
 
-.incidents-table td.muted {
+.issues-table td.muted {
   color: var(--muted);
 }
 
-.incidents-table td .sev-dot {
+.issues-table td .sev-dot {
   margin-right: 6px;
 }
 
-.incidents-table .chevron-cell {
+.issues-table .chevron-cell {
   color: var(--text-tertiary);
   padding-left: 6px;
   padding-right: 12px;
   text-align: right;
 }
 
-.incidents-table tbody tr:hover .chevron-cell {
+.issues-table tbody tr:hover .chevron-cell {
   color: var(--text);
 }
 
@@ -1086,12 +1029,12 @@ a:focus-visible,
    selected — bolder than the keyboard-focus ring elsewhere, since this
    one persists for as long as the drawer is open, not just a transient
    nav cue. Built from the theme's own accent, not a literal color swap. */
-.incidents-table tbody tr.lookalike-row--selected {
+.issues-table tbody tr.lookalike-row--selected {
   background-color: var(--accent-weak);
   box-shadow: inset 4px 0 0 0 var(--accent);
 }
 
-.incidents-table tbody tr.lookalike-row--selected:hover {
+.issues-table tbody tr.lookalike-row--selected:hover {
   background-color: var(--accent-weak);
 }
 
@@ -1135,9 +1078,9 @@ a:focus-visible,
 }
 
 .lookalike-drawer-eyebrow {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: var(--subtitle-tracking);
   font-weight: 700;
   color: var(--muted);
 }
@@ -1191,9 +1134,9 @@ a:focus-visible,
 }
 
 .lookalike-drawer-section h3 {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   margin: 0 0 8px;
   font-weight: 700;
@@ -1242,7 +1185,7 @@ a:focus-visible,
 .strip summary {
   cursor: pointer;
   color: var(--text);
-  font-size: 13.5px;
+  font-size: var(--fs-13);
   list-style: none;
 }
 
@@ -1263,7 +1206,7 @@ a:focus-visible,
 
 .strip .reason {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--fs-13);
   padding: 8px 0 2px 22px;
 }
 
@@ -1275,7 +1218,7 @@ a:focus-visible,
   background: none;
   border: none;
   color: var(--accent);
-  font-size: 13.5px;
+  font-size: var(--fs-13);
   cursor: pointer;
   padding: 0;
   font-weight: 600;
@@ -1285,7 +1228,7 @@ a:focus-visible,
   background: none;
   border: none;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--fs-13);
   cursor: pointer;
   padding: 0;
   margin: 0 0 16px;
@@ -1340,14 +1283,6 @@ a:focus-visible,
 
 .owner-line-prominent strong {
   font-weight: 750;
-}
-
-/* the PS's own example phrasing ("X fell from 0.86 to 0.31"), made literal */
-.claim-sentence {
-  font: 650 var(--fs-19)/1.45 var(--font-display);
-  letter-spacing: -.01em;
-  color: var(--text);
-  margin: 0 0 12px;
 }
 
 /* the sentence naming the baseline, emphasized in place within the
@@ -1419,9 +1354,9 @@ a:focus-visible,
 }
 
 .finding-card h2 {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   margin: 0 0 12px;
   font-weight: 700;
@@ -1491,7 +1426,7 @@ a:focus-visible,
 .severity-meter-scale {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: var(--fs-11);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .04em;
@@ -1533,9 +1468,9 @@ a:focus-visible,
 }
 
 .finding-hero-meta-item .l {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   font-weight: 700;
 }
@@ -1601,9 +1536,9 @@ a:focus-visible,
 }
 
 .finding-block h2 {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   margin: 0 0 12px;
   font-weight: 700;
@@ -1659,59 +1594,64 @@ a:focus-visible,
 
 /* Inline collapsible receipts (How we computed / Evidence chain) — sit
    in the main column instead of a sidebar, closed by default so the
-   narrative reads uninterrupted for the 80% case that doesn't need them */
-details.inline-receipts {
+   narrative reads uninterrupted for the 80% case that doesn't need them.
+   The card's own 22px/24px padding is reset to 0 here so the pill header
+   and body share one consistent 16px inset instead of stacking two
+   different insets on top of each other. */
+.inline-receipts {
   margin-bottom: 24px;
+  padding: 16px;
 }
 
-details.inline-receipts>summary {
+.inline-receipts-summary {
+  display: block;
+  width: 100%;
+  text-align: left;
   cursor: pointer;
-  font-size: 12.5px;
+  font-family: inherit;
+  font-size: var(--fs-13);
   font-weight: 650;
   color: var(--muted);
-  list-style: none;
-  padding: 10px 14px;
+  padding: 12px 16px;
+  margin: -16px -16px 0;
   background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  transition: background .15s var(--ease);
+  border-radius: var(--radius);
+  transition: background .15s var(--ease), border-radius .15s var(--ease), color .15s var(--ease);
 }
 
-details.inline-receipts>summary::-webkit-details-marker {
-  display: none;
-}
-
-details.inline-receipts>summary::before {
+.inline-receipts-summary::before {
   content: "\002B";
   margin-right: 10px;
   color: var(--accent);
   font-weight: 800;
 }
 
-details.inline-receipts[open]>summary::before {
+.inline-receipts--open .inline-receipts-summary::before {
   content: "\002212";
 }
 
-details.inline-receipts>summary:hover {
+.inline-receipts-summary:hover {
   background: var(--surface-hover);
   color: var(--text);
 }
 
-details.inline-receipts[open]>summary {
-  margin-bottom: 12px;
+.inline-receipts--open .inline-receipts-summary {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
-details.inline-receipts>p {
+.inline-receipts-panel>p {
   font-size: var(--fs-13);
   line-height: 1.65;
   color: var(--muted);
-  padding: 0 14px;
   margin: 0;
+  padding: 16px 4px 4px;
 }
 
 .evidence-list {
   list-style: none;
-  padding: 0 14px;
+  padding: 16px 4px 4px;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -1796,9 +1736,9 @@ details.inline-receipts>p {
 }
 
 .fix-decision-label {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   font-weight: 700;
 }
@@ -1936,9 +1876,9 @@ details.inline-receipts>p {
 }
 
 .block h2 {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   margin: 0 0 10px;
   font-weight: 700;
@@ -2167,9 +2107,9 @@ details.inline-receipts>p {
 }
 
 .severity-donut-card h2 {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   margin: 0 0 4px;
   font-weight: 700;
@@ -2210,7 +2150,7 @@ details.inline-receipts>p {
 }
 
 .severity-donut-center .l {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   color: var(--muted);
   font-weight: 600;
   text-transform: uppercase;
@@ -2286,7 +2226,7 @@ details.inline-receipts>p {
 }
 
 .compare-bars-label {
-  font-size: 11.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
   letter-spacing: .06em;
   color: var(--muted);
@@ -2535,9 +2475,9 @@ details.inline-receipts>p {
 }
 
 .metric-gauge-eyebrow {
-  font-size: 10px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   font-weight: 700;
   margin: 0 0 6px;
@@ -3356,7 +3296,7 @@ details.inline-receipts>p {
 /* ---- 2. Keyboard navigation (j / k / Enter) ---- */
 /* the row-level focus ring lives with the incidents table styles above;
    the shortcut legend itself now lives in the top nav (.topnav-shortcuts). */
-.incidents-table tbody tr:focus-visible {
+.issues-table tbody tr:focus-visible {
   outline: none;
 }
 

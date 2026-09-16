@@ -6,7 +6,7 @@ import { pct } from "../lib/format";
 import { ChevronRightIcon, Icon } from "../components/Icon";
 import type { Finding } from "../api/types";
 
-// Same stagger/spring the incidents table uses, for visual parity.
+// Same stagger/spring the issues table uses, for visual parity.
 const tbodyVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
@@ -102,9 +102,9 @@ export function Dismissed() {
       </div>
 
       {items.length > 0 ? (
-        <div className="incidents-table-wrap">
-          <div className="incidents-table-scroll">
-            <table className="incidents-table">
+        <div className="issues-table-wrap">
+          <div className="issues-table-scroll">
+            <table className="issues-table">
               <colgroup>
                 <col style={{ width: "auto" }} />
                 <col style={{ width: 220 }} />
@@ -112,7 +112,7 @@ export function Dismissed() {
               </colgroup>
               <thead>
                 <tr>
-                  <th>Incident</th>
+                  <th>Issues</th>
                   <th>Tenant &middot; Intent</th>
                   <th aria-hidden />
                 </tr>

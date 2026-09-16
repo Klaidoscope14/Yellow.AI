@@ -1,6 +1,5 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useReport } from "./hooks/ReportContext";
-import { needsDecisionCount } from "./lib/report";
 import { ControlCenter } from "./screens/ControlCenter";
 import { FindingDetail } from "./screens/FindingDetail";
 import { Dismissed } from "./screens/Dismissed";
@@ -18,11 +17,9 @@ export function App() {
   if (error) return <div className="error">Failed to load report: {error}</div>;
   if (!report) return null;
 
-  const pending = needsDecisionCount(report);
-
   return (
     <div className="app-shell">
-      <TopNav team={report.team} pending={pending} />
+      <TopNav />
 
       <main className="page-enter" key={location.pathname}>
         <Routes>

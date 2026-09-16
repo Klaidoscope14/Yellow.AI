@@ -7,6 +7,7 @@ import {
 } from "../lib/format";
 import { ROLE_LABEL } from "../lib/asks";
 import { DecisionGate } from "../components/DecisionGate";
+import { Disclosure } from "../components/Disclosure";
 import { RadialStat } from "../components/RadialStat";
 import { ComparisonBars } from "../components/ComparisonBars";
 import { PredictedDelta } from "../components/PredictedDelta";
@@ -31,7 +32,7 @@ export function FindingDetail() {
 
   return (
     <div className="page-container finding-page">
-      <button className="back" onClick={() => nav("/")}>&larr; Back to Incidents</button>
+      <button className="back" onClick={() => nav("/")}>&larr; Back to Issues</button>
 
       {/* ---- HERO ---- */}
       <header className="finding-hero-card">
@@ -174,8 +175,7 @@ export function FindingDetail() {
 
           {/* How we computed this */}
           {finding.impact && (
-            <details className="finding-card inline-receipts">
-              <summary>How we computed this</summary>
+            <Disclosure label="How we computed this">
               <p>
                 {finding.impact.derivation.split(/(?<=\.)\s+/).map((sentence, i) =>
                   /baseline/i.test(sentence) ? (
@@ -185,17 +185,16 @@ export function FindingDetail() {
                   ),
                 )}
               </p>
-            </details>
+            </Disclosure>
           )}
 
           {/* Evidence chain */}
           {finding.evidence.length > 0 && (
-            <details className="finding-card inline-receipts">
-              <summary>Evidence chain</summary>
+            <Disclosure label="Evidence chain">
               <ul className="evidence-list">
                 {finding.evidence.map((e, i) => <li key={i}>{e}</li>)}
               </ul>
-            </details>
+            </Disclosure>
           )}
         </aside>
       </div>
