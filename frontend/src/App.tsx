@@ -7,6 +7,7 @@ import { Gaps } from "./screens/Gaps";
 import { Decisions } from "./screens/Decisions";
 import { TopNav } from "./components/TopNav";
 import { CommandPalette } from "./components/CommandPalette";
+import { AmbientParticles } from "./components/AmbientParticles";
 
 export function App() {
   const { report, loading, error, booting, bootAttempt, bootMaxAttempts, reload } = useReport();
@@ -40,6 +41,7 @@ export function App() {
 
   return (
     <div className="app-shell">
+      <AmbientParticles />
       <TopNav />
 
       <main className="page-enter" key={location.pathname}>

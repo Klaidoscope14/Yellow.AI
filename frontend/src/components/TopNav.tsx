@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { CircleAlert, Users, Wrench, Lightbulb } from "lucide-react";
-import { NexusWordmark } from "./NexusWordmark";
+import nexusLogo from "../assets/nexus-logo.png";
 
 const LINKS = [
   { to: "/", label: "Issues", end: true, icon: CircleAlert },
@@ -18,9 +18,9 @@ export function TopNav() {
   return (
     <header className="topnav">
       <div className="topnav-inner">
-        <div className="topnav-brand">
-          <span className="nexus-wordmark"><NexusWordmark height={24} /></span>
-        </div>
+        <Link to="/" className="topnav-brand" aria-label="Go to home">
+          <img src={nexusLogo} alt="Nexus" className="nexus-logo" />
+        </Link>
 
         <nav className="topnav-links" onMouseLeave={() => setHovered(null)}>
           {LINKS.map((l) => (
