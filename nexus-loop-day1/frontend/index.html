@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexus Loop Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>Nexus Loop Dashboard</h1>
+      <button id="runBtn">Run Analysis</button>
+    </header>
+
+    <main class="container">
+      <section class="summary card">
+        <h2>Overview</h2>
+        <div id="statusBox">Idle</div>
+        <div id="scoreBox">Score: --</div>
+      </section>
+
+      <section class="card">
+        <h2>Summary</h2>
+        <pre id="summaryOutput">{}</pre>
+      </section>
+
+      <section class="card">
+        <h2>Standards</h2>
+        <ul id="standardsList"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Findings</h2>
+        <ul id="findingsList"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Replay Verification</h2>
+        <ul id="verificationList"></ul>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
