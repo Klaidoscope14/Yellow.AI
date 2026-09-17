@@ -1,7 +1,7 @@
 import os
 import duckdb
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data").replace("\\", "/")
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "Nexus-Loop", "kit", "corpus").replace("\\", "/")
 
 
 def connect() -> duckdb.DuckDBPyConnection:

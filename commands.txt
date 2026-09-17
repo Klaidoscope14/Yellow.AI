@@ -1,0 +1,22 @@
+# Assuming you are starting from the root of the project:
+# d:\Professional Work\Business\YellowAi
+
+# Command 1: Run the Replay Server
+# Open a terminal and run:
+cd Nexus-Loop\tools\nexus-loop-kit
+C:\Users\Predator\AppData\Local\Python\bin\python.exe replay/serve.py --kit "..\..\kit" --ground-truth "..\..\..\flaggingLogic\pipeline\ground_truth.json" --port 8719
+
+# Command 2: Run the AIML Layer
+# Open a SECOND terminal and run:
+cd Nexus-Loop
+C:\Users\Predator\AppData\Local\Python\bin\python.exe run_aiml.py
+
+# Command 3: Run the Backend Server
+# Open a THIRD terminal and run:
+cd flaggingLogic
+C:\Users\Predator\AppData\Local\Python\bin\python.exe run_backend.py
+
+# Command 4: Run the Frontend
+# Open a FOURTH terminal and run:
+cd frontend
+npm run dev

@@ -19,7 +19,7 @@ def _env(name: str, default: str) -> str:
 
 
 # Corpus (the four files the detectors read).
-DATA_DIR = _env("NEXUS_DATA_DIR", os.path.join(_FLAGGING, "data"))
+DATA_DIR = _env("NEXUS_DATA_DIR", os.path.join(_ROOT, "Nexus-Loop", "kit", "corpus"))
 
 # Detector thresholds.
 CONFIG_PATH = _env("NEXUS_CONFIG_PATH", os.path.join(_FLAGGING, "pipeline", "config.json"))
