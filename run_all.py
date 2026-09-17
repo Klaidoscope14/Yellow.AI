@@ -4,6 +4,7 @@ import sys
 import os
 import urllib.request
 import json
+import argparse
 
 root = os.path.dirname(os.path.abspath(__file__))
 
@@ -11,6 +12,12 @@ root = os.path.dirname(os.path.abspath(__file__))
 # NOTE: psutil.net_connections() requires root on macOS (raises
 # AccessDenied) and is unreliable cross-platform, so we shell out to
 # lsof/netstat instead, which works unprivileged on macOS/Linux/WSL.
+parser = argparse.ArgumentParser(description="Run all services for Nexus Loop")
+parser.add_argument("--kit", default=os.path.join(root, "Nexus-Loop", "kit"), help="Path to the kit directory")
+args = parser.parse_args()
+kit_path = os.path.abspath(args.kit)
+
+# Clean up any orphaned ports before starting
 ports = [8719, 8802, 8801, 5173]
 print(f"Killing existing processes on ports {ports}...")
 for port in ports:
@@ -37,12 +44,12 @@ for port in ports:
 time.sleep(1)
 
 env = os.environ.copy()
-env["NEXUS_DATA_DIR"] = os.path.join(root, "Nexus-Loop", "kit", "corpus")
-env["NEXUS_CATALOG_PATH"] = os.path.join(root, "Nexus-Loop", "kit", "catalog.json")
-env["NEXUS_LABELS_PATH"] = os.path.join(root, "Nexus-Loop", "kit", "labels", "rubric_scores.jsonl")
+env["NEXUS_DATA_DIR"] = os.path.join(kit_path, "corpus")
+env["NEXUS_CATALOG_PATH"] = os.path.join(kit_path, "catalog.json")
+env["NEXUS_LABELS_PATH"] = os.path.join(kit_path, "labels", "rubric_scores.jsonl")
 
 print("[1/4] Starting Replay Service (Port 8719)...")
-p1 = subprocess.Popen([sys.executable, "replay/serve.py", "--kit", "../../kit", "--ground-truth", "../../../flaggingLogic/pipeline/ground_truth.json", "--port", "8719"], 
+p1 = subprocess.Popen([sys.executable, "replay/serve.py", "--kit", kit_path, "--ground-truth", "../../../flaggingLogic/pipeline/ground_truth.json", "--port", "8719"], 
                       cwd=os.path.join(root, "Nexus-Loop", "tools", "nexus-loop-kit"))
 time.sleep(2)
 
