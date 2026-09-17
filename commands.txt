@@ -37,7 +37,7 @@ cd C:\Users\Samsung\Desktop\nexus-loop-day1\nexus-loop-day1
 py .\tools\nexus-loop-kit\pipeline.py `
   --kit .\kit `
   --team generalized-final-loop `
-  --out .\my-generalized-final-loop.json `
+  --out .\loop-report.json `
   --replay-url http://127.0.0.1:8719 `
   --score
 

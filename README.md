@@ -11,7 +11,7 @@ kit/ corpus and metadata
 pipeline.py  inspect -> preprocess -> detect -> diagnose -> prescribe -> replay -> validate
         |
         v
-my-generalized-final-loop.json  canonical generated report
+loop-report.json  canonical generated report
         |
         v
 service/service_backend.py  loads/adapts the report at /report
@@ -24,7 +24,7 @@ The layers have separate responsibilities:
 
 - **Agentic pipeline**: reads the corpus, mines cohort standards, detects F1/F2/F3 and decoys, creates diagnoses and prescriptions, optionally runs replay, and writes a report.
 - **Replay service**: evaluates proposed changes against the corpus ground-truth effect model without modifying the corpus.
-- **Service backend**: exposes the generated report through a small HTTP API. It uses `my-generalized-final-loop.json` as the canonical frontend payload and persists approvals in `.approvals.json`.
+- **Service backend**: exposes the generated report through a small HTTP API. It uses `loop-report.json` as the canonical frontend payload and persists approvals in `.approvals.json`.
 - **Frontend**: consumes the report contract and renders incidents, dismissed patterns, diagnostic gaps, decisions, evidence, and replay verification.
 
 The FastAPI split is represented by `service/backend.py` for deterministic backend transport and `service/app.py` for the AI/ML `/analyze` layer. The support modules in `service/engine.py`, `service/report_fragment.py`, `service/store.py`, and `service/chat.py` provide the deterministic adapter, approval store, and report-grounded chat surface.
@@ -61,7 +61,7 @@ Important files:
 | `nexus-loop-day1/tools/nexus-loop-kit/score.py` | Machine scoring harness |
 | `nexus-loop-day1/tools/nexus-loop-kit/replay/serve.py` | Replay verification server |
 | `nexus-loop-day1/service/service_backend.py` | HTTP service for the frontend |
-| `nexus-loop-day1/my-generalized-final-loop.json` | Canonical generated report |
+| `nexus-loop-day1/loop-report.json` | Canonical generated report |
 | `nexus-loop-day1/frontend/src/` | React dashboard |
 | `nexus-loop-day1/frontend/vite.config.ts` | Vite base path and API proxy |
 | `nexus-loop-day1/service/service_backend.py` | Verified local report and approval service |
@@ -85,7 +85,7 @@ Run the pipeline and score a report:
 py .\tools\nexus-loop-kit\pipeline.py `
   --kit .\kit `
   --team generalized-final-loop `
-        --out .\my-generalized-final-loop.json `
+        --out .\loop-report.json `
         --replay-url http://127.0.0.1:8719 `
   --score
 ```
@@ -135,7 +135,7 @@ POST /run
 POST /approvals
 ```
 
-`GET /report` serves the complete report contract from `my-generalized-final-loop.json`. The adapter preserves the pipeline fields used by the UI, including `metrics`, `standard`, `findings`, `diagnoses`, `prescriptions`, `verifications`, `gaps`, and `self_assessment`. `POST /approvals` validates and persists human decisions in `.approvals.json` and updates the cached report.
+`GET /report` serves the complete report contract from `loop-report.json`. The adapter preserves the pipeline fields used by the UI, including `metrics`, `standard`, `findings`, `diagnoses`, `prescriptions`, `verifications`, `gaps`, and `self_assessment`. `POST /approvals` validates and persists human decisions in `.approvals.json` and updates the cached report.
 
 To inspect the report from PowerShell:
 
