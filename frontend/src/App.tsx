@@ -5,16 +5,37 @@ import { FindingDetail } from "./screens/FindingDetail";
 import { Dismissed } from "./screens/Dismissed";
 import { Gaps } from "./screens/Gaps";
 import { Decisions } from "./screens/Decisions";
-import { Chat } from "./components/Chat";
 import { TopNav } from "./components/TopNav";
 import { CommandPalette } from "./components/CommandPalette";
 
 export function App() {
-  const { report, loading, error } = useReport();
+  const { report, loading, error, booting, bootAttempt, bootMaxAttempts, reload } = useReport();
   const location = useLocation();
 
-  if (loading) return <div className="loading">Loading report&hellip;</div>;
-  if (error) return <div className="error">Failed to load report: {error}</div>;
+  if (booting || (loading && !report && !error)) {
+    return (
+      <div className="loading loading--boot">
+        <div className="spinner" aria-hidden="true" />
+        <p>{booting ? "Starting services…" : "Loading report…"}</p>
+        {booting && (
+          <p className="loading__hint">
+            First boot can take up to ~30s (backend is loading data and computing metrics).
+            Attempt {bootAttempt}/{bootMaxAttempts}&hellip;
+          </p>
+        )}
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="error">
+        <p>Failed to load report: {error}</p>
+        <button type="button" onClick={reload}>
+          Retry
+        </button>
+      </div>
+    );
+  }
   if (!report) return null;
 
   return (
@@ -31,7 +52,6 @@ export function App() {
         </Routes>
       </main>
 
-      <Chat />
       <CommandPalette />
     </div>
   );

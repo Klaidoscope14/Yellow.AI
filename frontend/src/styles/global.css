@@ -12,9 +12,9 @@
    by a single four-level scale: large title, title, subtitle, body.
    Motion is short and quiet. */
 :root {
-  --bg: #faf9ff;
-  --bg-subtle: #f1eefb;
-  --bg-right: #faf9ff;
+  --bg: #fbf6fd;
+  --bg-subtle: #f3ecfa;
+  --bg-right: #fbf6fd;
   --surface: #ffffff;
   --surface-hover: #f5f2fc;
   --text: #14101f;
@@ -159,13 +159,39 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 780px 620px at 4% -6%, rgba(110, 86, 207, .30), transparent 58%),
-    radial-gradient(ellipse 680px 560px at 100% 4%, rgba(219, 39, 160, .22), transparent 56%),
-    radial-gradient(ellipse 640px 560px at 108% 22%, rgba(235, 140, 205, .22), transparent 55%),
-    radial-gradient(ellipse 640px 560px at -8% 66%, rgba(99, 91, 219, .22), transparent 55%),
-    radial-gradient(ellipse 760px 640px at 104% 102%, rgba(184, 58, 168, .18), transparent 55%),
-    radial-gradient(ellipse 560px 480px at 30% 98%, rgba(219, 39, 160, .14), transparent 55%),
+    radial-gradient(ellipse 780px 620px at 4% -6%, rgba(130, 76, 217, .36), transparent 58%),
+    radial-gradient(ellipse 680px 560px at 100% 4%, rgba(230, 35, 170, .30), transparent 56%),
+    radial-gradient(ellipse 640px 560px at 108% 22%, rgba(240, 130, 215, .30), transparent 55%),
+    radial-gradient(ellipse 640px 560px at -8% 66%, rgba(140, 80, 230, .28), transparent 55%),
+    radial-gradient(ellipse 760px 640px at 104% 102%, rgba(200, 50, 185, .26), transparent 55%),
+    radial-gradient(ellipse 560px 480px at 30% 98%, rgba(225, 45, 175, .20), transparent 55%),
     var(--bg);
+  /* oversized canvas so the drift below has room to pan without the
+     blobs' edges ever reaching the viewport */
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  animation: bgDrift 28s ease-in-out infinite;
+}
+
+/* slow, ambient pan across the mesh — light and continuous, not a pulse */
+@keyframes bgDrift {
+  0% {
+    background-position: 0% 0%;
+  }
+
+  50% {
+    background-position: 100% 100%;
+  }
+
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
 }
 
 ::selection {
@@ -1898,6 +1924,163 @@ a:focus-visible,
   max-width: 640px;
 }
 
+/* ---- Ask Nexus: the 11 operator-ask pills sitting just above the search
+   bar on the home page, replacing the old floating "Ask Nexy" bar. Same
+   liquid-glass language (blur + bevel + turbulence layer), just split into
+   11 fixed questions instead of one free-text box. ---- */
+.ask-panel-wrap {
+  padding: 4px 0 20px;
+  text-align: center;
+}
+
+.ask-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 auto;
+}
+
+.ask-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 8px 8px;
+  background: rgba(255, 255, 255, .55);
+  backdrop-filter: blur(14px) saturate(185%);
+  -webkit-backdrop-filter: blur(14px) saturate(185%);
+  border: 1px solid rgba(255, 255, 255, .6);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  /* full liquid-glass bevel: thin refractive rim + broad inner light,
+     same recipe as the original Ask Nexy trigger */
+  box-shadow:
+    0 0 6px rgba(14, 14, 16, .03),
+    0 2px 8px rgba(14, 14, 16, .09),
+    0 6px 16px rgba(14, 14, 16, .08),
+    inset 2px 2px .5px -2px rgba(14, 14, 16, .5),
+    inset -2px -2px .5px -2px rgba(14, 14, 16, .45),
+    inset 1px 1px 1px -.5px rgba(14, 14, 16, .3),
+    inset -1px -1px 1px -.5px rgba(14, 14, 16, .26),
+    inset 0 0 6px 6px rgba(255, 255, 255, .35),
+    inset 0 0 2px 2px rgba(255, 255, 255, .5);
+  color: var(--ink);
+  font: 650 13.5px/1 var(--font-body);
+  letter-spacing: -.01em;
+  cursor: pointer;
+  transition: background .15s var(--ease), box-shadow .15s var(--ease), transform .15s var(--ease);
+}
+
+/* per-pill refraction layer -- same turbulence displacement as the popup
+   and the old trigger, clipped to the pill by the button's own overflow:
+   hidden so it reads as genuine frosted glass, not a flat tint. */
+.ask-pill-glass {
+  border-radius: inherit;
+}
+
+.ask-pill-orb,
+.ask-pill-label {
+  position: relative;
+  z-index: 1;
+}
+
+.ask-pill:hover {
+  background: rgba(255, 255, 255, .78);
+  box-shadow:
+    0 10px 28px rgba(14, 14, 16, .14),
+    0 1px 3px rgba(14, 14, 16, .07),
+    inset 0 1px 0 rgba(255, 255, 255, .95);
+}
+
+.ask-pill--active {
+  background: var(--accent-weak);
+  border-color: var(--accent-border);
+}
+
+.ask-pill-orb {
+  position: relative;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 250, 225, .95), rgba(255, 236, 180, .55));
+  box-shadow: 0 0 8px rgba(255, 200, 20, .3), 0 1px 3px rgba(120, 90, 10, .10);
+}
+
+.ask-pill-orb .ai-orb-a,
+.ask-pill-orb .ai-orb-b {
+  position: absolute;
+  inset: -40%;
+  border-radius: 50%;
+  filter: blur(5px);
+  opacity: .8;
+}
+
+.ask-pill-orb .ai-orb-a {
+  background:
+    radial-gradient(circle at 30% 32%, rgba(230, 224, 30, .95) 0%, rgba(230, 224, 30, 0) 52%),
+    radial-gradient(circle at 70% 34%, rgba(255, 168, 18, .9) 0%, rgba(255, 168, 18, 0) 54%),
+    radial-gradient(circle at 50% 74%, rgba(190, 214, 26, .9) 0%, rgba(190, 214, 26, 0) 56%);
+  animation: orbSwirlA 7s linear infinite;
+}
+
+.ask-pill-orb .ai-orb-b {
+  background:
+    radial-gradient(circle at 66% 62%, rgba(232, 160, 225, .9) 0%, rgba(232, 160, 225, 0) 52%),
+    radial-gradient(circle at 34% 66%, rgba(255, 253, 240, .85) 0%, rgba(255, 253, 240, 0) 50%),
+    radial-gradient(circle at 56% 26%, rgba(222, 190, 255, .8) 0%, rgba(222, 190, 255, 0) 42%);
+  animation: orbSwirlB 10s linear infinite reverse;
+}
+
+/* fixed, centered anchor for the popup -- kept free of framer-motion's own
+   inline `transform` (used for the scale/y animation on .ask-popup below)
+   so the centering transform never gets clobbered by the animation one. */
+.ask-popup-anchor {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 20px;
+  pointer-events: none;
+}
+
+/* the popup that answers one ask, floating bottom-center like the old bar */
+.ask-popup {
+  position: relative;
+  pointer-events: auto;
+  width: 460px;
+  max-width: calc(100vw - 32px);
+  max-height: min(62vh, 520px);
+  overflow: hidden;
+  background: rgba(255, 255, 255, .78);
+  border: 1px solid rgba(255, 255, 255, .6);
+  border-radius: 26px;
+  box-shadow:
+    0 0 6px rgba(14, 14, 16, .03),
+    0 10px 28px rgba(14, 14, 16, .14),
+    inset 0 0 6px 6px rgba(255, 255, 255, .35),
+    inset 0 0 2px 2px rgba(255, 255, 255, .5);
+  display: flex;
+  flex-direction: column;
+}
+
+.ask-popup-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: min(62vh, 520px);
+}
+
+.ask-popup-log {
+  max-height: 420px;
+}
+
 
 /* stat rail — one row, hairline dividers, no per-item box (replaces boxed .fact tiles) */
 .stat-rail {
@@ -2838,91 +3021,6 @@ a:focus-visible,
   }
 }
 
-/* ---- floating AI dock: "Ask AI" pill that morphs into an input panel ---- */
-.ai-bar {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 40;
-  display: flex;
-  justify-content: center;
-}
-
-/* the morphing glass container */
-.ai-shell {
-  position: relative;
-  width: 118px;
-  min-height: 40px;
-  max-height: 40px;
-  max-width: calc(100vw - 32px);
-  background: rgba(255, 255, 255, .55);
-  backdrop-filter: blur(14px) saturate(185%);
-  -webkit-backdrop-filter: blur(14px) saturate(185%);
-  border: 1px solid rgba(255, 255, 255, .6);
-  /* exactly half the collapsed height: a true pill that still interpolates
-     cleanly, unlike 999px which clamps to a circle mid-collapse */
-  border-radius: 20px;
-  /* liquid-glass bevel: thin refractive rim + broad inner light */
-  box-shadow:
-    0 0 6px rgba(14, 14, 16, .03),
-    0 2px 8px rgba(14, 14, 16, .09),
-    0 10px 28px rgba(14, 14, 16, .10),
-    inset 3px 3px .5px -3px rgba(14, 14, 16, .5),
-    inset -3px -3px .5px -3px rgba(14, 14, 16, .45),
-    inset 1px 1px 1px -.5px rgba(14, 14, 16, .32),
-    inset -1px -1px 1px -.5px rgba(14, 14, 16, .28),
-    inset 0 0 6px 6px rgba(255, 255, 255, .35),
-    inset 0 0 2px 2px rgba(255, 255, 255, .5),
-    0 0 12px rgba(255, 255, 255, .2);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transition:
-    width .38s var(--ease-glass),
-    min-height .38s var(--ease-glass),
-    max-height .38s var(--ease-glass),
-    border-radius .38s var(--ease-glass),
-    box-shadow .25s var(--ease),
-    background .25s var(--ease);
-}
-
-.ai-shell--open {
-  width: 460px;
-  min-height: 84px;
-  /* tight to actual content (orb+textarea row + toolbar row + padding is
-     ~85-90px) with just enough headroom for a couple of wrapped lines. A
-     concrete number, not `none`, so this still animates cleanly against
-     the other states' max-height instead of snapping */
-  max-height: 130px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, .68);
-}
-
-/* conversation state: the same glass surface grows upward */
-.ai-shell--chat {
-  width: 560px;
-  /* min + max pinned to the same value caps it — same technique as the
-     other states, so this animates instead of snapping, and .chat-log
-     scrolls internally past this point rather than the shell growing */
-  min-height: min(62vh, 520px);
-  max-height: min(62vh, 520px);
-  border-radius: 26px;
-  background: rgba(255, 255, 255, .78);
-}
-
-.ai-chat-region {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.ai-shell--chat .ai-panel-body {
-  border-top: 1px solid rgba(14, 14, 16, .09);
-}
-
 /* filter defs must stay rendered (display:none would disable them) */
 .ai-glass-defs {
   position: absolute;
@@ -2939,115 +3037,6 @@ a:focus-visible,
   pointer-events: none;
   backdrop-filter: url("#ai-glass");
   -webkit-backdrop-filter: url("#ai-glass");
-}
-
-.ai-shell>.ai-panel-body {
-  position: relative;
-  z-index: 1;
-}
-
-/* the collapsed "Ask AI" label overlays the panel's position instead of
-   taking its own layout slot — during their brief crossfade this lets the
-   label fade in directly on top of the panel as it fades out, rather than
-   one fully unmounting before the other appears (which left the shrinking
-   shell empty for a beat mid-close). The panel itself stays in normal
-   flow always — it needs content to actually determine its height (a
-   multi-line message, the orb + send button row), not be locked to
-   whatever size the shell happens to be. */
-.ai-shell>.ai-trigger {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-
-/* collapsed trigger */
-.ai-trigger {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  height: 40px;
-  padding: 0 16px 0 5px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--ink);
-  font: 650 14px/1 var(--font-body);
-  letter-spacing: -.01em;
-  white-space: nowrap;
-}
-
-.ai-shell:not(.ai-shell--open):hover {
-  background: rgba(255, 255, 255, .78);
-  box-shadow:
-    0 10px 28px rgba(14, 14, 16, .14),
-    0 1px 3px rgba(14, 14, 16, .07),
-    inset 0 1px 0 rgba(255, 255, 255, .95);
-}
-
-/* Siri orb: colour blobs swirling inside a lit sphere */
-.ai-orb {
-  position: relative;
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 250, 225, .95), rgba(255, 236, 180, .55));
-  box-shadow:
-    0 0 12px rgba(255, 200, 20, .3),
-    0 0 22px rgba(255, 150, 60, .16),
-    0 1px 4px rgba(120, 90, 10, .10);
-}
-
-/* wide, soft colour clouds — diffuse rather than polished */
-.ai-orb-a,
-.ai-orb-b {
-  position: absolute;
-  inset: -40%;
-  border-radius: 50%;
-  filter: blur(7px);
-  opacity: .8;
-}
-
-.ai-orb-a {
-  background:
-    radial-gradient(circle at 30% 32%, rgba(230, 224, 30, .95) 0%, rgba(230, 224, 30, 0) 52%),
-    radial-gradient(circle at 70% 34%, rgba(255, 168, 18, .9) 0%, rgba(255, 168, 18, 0) 54%),
-    radial-gradient(circle at 50% 74%, rgba(190, 214, 26, .9) 0%, rgba(190, 214, 26, 0) 56%);
-  animation: orbSwirlA 7s linear infinite;
-}
-
-.ai-orb-b {
-  background:
-    radial-gradient(circle at 66% 62%, rgba(232, 160, 225, .9) 0%, rgba(232, 160, 225, 0) 52%),
-    radial-gradient(circle at 34% 66%, rgba(255, 253, 240, .85) 0%, rgba(255, 253, 240, 0) 50%),
-    radial-gradient(circle at 56% 26%, rgba(222, 190, 255, .8) 0%, rgba(222, 190, 255, 0) 42%);
-  animation: orbSwirlB 10s linear infinite reverse;
-}
-
-/* fine grain, so the surface reads as textured vapour not chrome */
-.ai-orb::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: .22;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* broad, soft sheen — no hard specular dot */
-.ai-orb::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 36% 30%, rgba(255, 255, 255, .5) 0%, rgba(255, 255, 255, 0) 58%),
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0) 62%, rgba(255, 255, 255, .35) 100%);
 }
 
 @keyframes orbSwirlA {
@@ -3075,164 +3064,6 @@ a:focus-visible,
 
   100% {
     transform: rotate(360deg) scale(1.16);
-  }
-}
-
-/* open panel wrapper */
-.ai-panel-body {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 10px 8px 6px 14px;
-}
-
-/* open panel: top row (orb + textarea + send) */
-.ai-bar-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-}
-
-.ai-shell--open .ai-orb {
-  width: 22px;
-  height: 22px;
-  align-self: flex-start;
-  margin-top: 3px;
-}
-
-.ai-shell--open .ai-bar-send {
-  align-self: flex-end;
-}
-
-/* text input inside the open panel */
-.ai-shell textarea {
-  flex: 1;
-  background: transparent;
-  border: none;
-  resize: none;
-  color: var(--ink);
-  font-size: 14.5px;
-  font-weight: 500;
-  font-family: var(--font-body);
-  line-height: 1.4;
-  min-width: 0;
-  max-height: 160px;
-  overflow-y: auto;
-  padding: 5px 0;
-  scrollbar-width: thin;
-}
-
-.ai-shell textarea::placeholder {
-  color: rgba(14, 14, 16, .40);
-  font-weight: 400;
-}
-
-.ai-shell textarea:focus {
-  outline: none;
-}
-
-/* helper row that slides in as the panel morphs open */
-.ai-bar-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-left: 32px;
-  padding-right: 6px;
-  overflow: hidden;
-}
-
-/* chatbot affordances */
-.ai-bar-tools {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-right: auto;
-}
-
-.ai-tool {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border: none;
-  border-radius: 50%;
-  background: none;
-  color: rgba(14, 14, 16, .45);
-  cursor: pointer;
-  transition: background .15s var(--ease), color .15s var(--ease);
-}
-
-.ai-tool:hover {
-  background: rgba(14, 14, 16, .07);
-  color: var(--ink);
-}
-
-.ai-bar-hint {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: .01em;
-  color: rgba(14, 14, 16, .38);
-}
-
-.ai-bar-clear {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(14, 14, 16, .07);
-  color: rgba(14, 14, 16, .5);
-  cursor: pointer;
-  transition: background .15s var(--ease), color .15s var(--ease);
-}
-
-.ai-bar-clear:hover {
-  background: rgba(14, 14, 16, .13);
-  color: var(--ink);
-}
-
-/* circular send button */
-.ai-bar-send {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  border-radius: 50%;
-  background: var(--accent-gradient);
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--brand-ink);
-  transition: background .15s var(--ease), transform .15s var(--ease);
-}
-
-.ai-bar-send:hover:not(:disabled) {
-  background: var(--accent-gradient-hover);
-  transform: scale(1.08);
-}
-
-.ai-bar-send:active:not(:disabled) {
-  transform: scale(.95);
-}
-
-.ai-bar-send:disabled {
-  opacity: .3;
-  cursor: default;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ai-orb::before {
-    animation: none;
-  }
-
-  .ai-shell {
-    transition: none;
   }
 }
 
@@ -3282,31 +3113,6 @@ a:focus-visible,
 
 .chat-close:hover {
   background: rgba(14, 14, 16, .12);
-}
-
-.chat-chips {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  padding: 12px 18px;
-  border-bottom: 1px solid rgba(14, 14, 16, .09);
-}
-
-.chip {
-  background: rgba(255, 255, 255, .55);
-  color: var(--text);
-  border: 1px solid rgba(14, 14, 16, .10);
-  border-radius: var(--radius-pill);
-  padding: 7px 12px;
-  font-size: 12.5px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background .15s var(--ease), border-color .15s var(--ease);
-}
-
-.chip:hover {
-  background: var(--accent-weak);
-  border-color: var(--accent-border);
 }
 
 .chat-log {
@@ -3372,8 +3178,53 @@ a:focus-visible,
   padding: 60px 20px;
 }
 
+.loading--boot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--muted) 30%, transparent);
+  border-top-color: var(--accent, var(--muted));
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading__hint {
+  font-size: 0.85em;
+  opacity: 0.75;
+  margin: 0;
+}
+
 .error {
   color: var(--reject);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.error button {
+  color: inherit;
+  border: 1px solid var(--reject);
+  background: transparent;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.error button:hover {
+  background: color-mix(in srgb, var(--reject) 12%, transparent);
 }
 
 /* ==================================================================
@@ -3647,8 +3498,7 @@ a:focus-visible,
     padding: 24px 16px 120px;
   }
 
-  .ai-shell--open,
-  .ai-shell--chat {
+  .ask-popup {
     width: calc(100vw - 32px);
   }
 }

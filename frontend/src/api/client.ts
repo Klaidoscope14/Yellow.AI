@@ -22,10 +22,6 @@ export function postChat(question: string): Promise<ChatResponse> {
   });
 }
 
-export function getChatSuggestions(): Promise<string[]> {
-  return json<string[]>("/chat/suggestions");
-}
-
 export function postApproval(
   prescriptionId: string,
   verdict: Verdict,

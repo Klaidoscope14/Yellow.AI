@@ -1,14 +1,24 @@
 // Loads the report once and shares it. applyApproval mutates the matching
 // prescription in place (the backend has already persisted it) so every screen
 // reflects a decision immediately without a refetch.
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { getReport } from "../api/client";
 import type { Approval, Report } from "../api/types";
+
+// On a fresh `run_all.py` start, the backend takes ~20-30s to import DuckDB
+// and compute the first metrics pass. Rather than flashing a hard error the
+// moment the very first request fails, we quietly retry for a while and only
+// surface an error once we're confident the backend isn't just still booting.
+const BOOT_RETRY_INTERVAL_MS = 2000;
+const BOOT_RETRY_MAX_ATTEMPTS = 20; // ~40s of retrying
 
 interface ReportState {
   report: Report | null;
   loading: boolean;
   error: string | null;
+  booting: boolean;
+  bootAttempt: number;
+  bootMaxAttempts: number;
   reload: () => void;
   applyApproval: (prescriptionId: string, approval: Approval | null) => void;
 }
@@ -19,17 +29,54 @@ export function ReportProvider({ children }: { children: ReactNode }) {
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [booting, setBooting] = useState(false);
+  const [bootAttempt, setBootAttempt] = useState(0);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const reload = useCallback(() => {
+  const clearRetryTimer = () => {
+    if (retryTimer.current) {
+      clearTimeout(retryTimer.current);
+      retryTimer.current = null;
+    }
+  };
+
+  const attempt = useCallback((attemptNumber: number) => {
     setLoading(true);
-    setError(null);
     getReport()
-      .then((r) => setReport(r))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
+      .then((r) => {
+        setReport(r);
+        setError(null);
+        setBooting(false);
+        setBootAttempt(0);
+      })
+      .catch((e: unknown) => {
+        const message = e instanceof Error ? e.message : String(e);
+        if (attemptNumber < BOOT_RETRY_MAX_ATTEMPTS) {
+          // Still likely booting (services starting up / port cleanup in
+          // progress) — keep the spinner up and retry quietly.
+          setBooting(true);
+          setBootAttempt(attemptNumber);
+          setError(null);
+          retryTimer.current = setTimeout(() => attempt(attemptNumber + 1), BOOT_RETRY_INTERVAL_MS);
+        } else {
+          setBooting(false);
+          setError(message);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(reload, [reload]);
+  const reload = useCallback(() => {
+    clearRetryTimer();
+    setError(null);
+    setBootAttempt(0);
+    attempt(1);
+  }, [attempt]);
+
+  useEffect(() => {
+    reload();
+    return clearRetryTimer;
+  }, [reload]);
 
   const applyApproval = useCallback((prescriptionId: string, approval: Approval | null) => {
     setReport((prev) => {
@@ -44,7 +91,18 @@ export function ReportProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <Ctx.Provider value={{ report, loading, error, reload, applyApproval }}>
+    <Ctx.Provider
+      value={{
+        report,
+        loading,
+        error,
+        booting,
+        bootAttempt,
+        bootMaxAttempts: BOOT_RETRY_MAX_ATTEMPTS,
+        reload,
+        applyApproval,
+      }}
+    >
       {children}
     </Ctx.Provider>
   );

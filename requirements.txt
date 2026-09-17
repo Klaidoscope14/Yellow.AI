@@ -7,3 +7,5 @@ uvicorn==0.42.0
 pydantic==2.12.4
 # ai/ml layer -> backend and -> replay endpoint calls
 httpx==0.28.1
+# used by run_all.py to kill orphaned processes on our ports before (re)starting
+psutil==7.2.2

@@ -8,6 +8,7 @@ import { SearchIcon } from "../components/Icon";
 import { useCountUp } from "../hooks/useCountUp";
 import { IssuesTable } from "../components/IssuesTable";
 import { SeverityDonut } from "../components/SeverityDonut";
+import { AskNexusGrid } from "../components/AskNexusGrid";
 import type { Severity } from "../api/types";
 
 const SEVERITIES = ["critical", "high", "medium", "low"] as const;
@@ -188,6 +189,8 @@ export function ControlCenter() {
 
         {regs.length > 0 && <SeverityDonut counts={sevCounts} />}
       </div>
+
+      <AskNexusGrid />
 
       <div className="filter-bar">
         <div className="search-input-wrap">
