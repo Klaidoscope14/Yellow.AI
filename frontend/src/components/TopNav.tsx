@@ -50,11 +50,7 @@ export function TopNav() {
             <span className="topnav-live-dot" aria-hidden />
             Live
           </button>
-          <div className="topnav-shortcuts">
-            <span><kbd>j</kbd><kbd>k</kbd> navigate</span>
-            <span><kbd>&#9166;</kbd> open</span>
-            <span><kbd>&#8984;K</kbd> search</span>
-          </div>
+
         </div>
       </div>
     </header>

@@ -703,6 +703,7 @@ a:focus-visible,
    lot of unused space next to it. */
 .kpi-hero {
   display: flex;
+  flex-direction: column;
   align-items: stretch;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -712,13 +713,15 @@ a:focus-visible,
 }
 
 .kpi-hero-section {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding: 16px 20px;
-  text-align: left;
+  padding: 22px 20px;
+  text-align: center;
   background: none;
   border: none;
   font: inherit;
@@ -738,10 +741,38 @@ a:focus-visible,
   cursor: default;
 }
 
+.kpi-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 14px;
+  font-size: var(--fs-11);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--subtitle-tracking);
+  color: var(--ok);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity .18s var(--ease), transform .18s var(--ease);
+}
+
+.kpi-hero-cta svg {
+  transition: transform .18s var(--ease);
+}
+
+.kpi-hero-section--link:not(:disabled):hover .kpi-hero-cta {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.kpi-hero-section--link:not(:disabled):hover .kpi-hero-cta svg {
+  transform: translateX(2px);
+}
+
 .kpi-hero-divider {
-  width: 1px;
+  height: 1px;
+  width: 100%;
   flex-shrink: 0;
-  align-self: stretch;
   background: var(--border);
 }
 
@@ -750,6 +781,7 @@ a:focus-visible,
 .kpi-hero-sevs {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
   margin-top: 10px;
 }
@@ -771,6 +803,7 @@ a:focus-visible,
 .kpi-hero-main {
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 .kpi-hero-n {
@@ -778,6 +811,10 @@ a:focus-visible,
   letter-spacing: -.03em;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+}
+
+.kpi-hero-n--ok {
+  color: var(--ok);
 }
 
 .kpi-hero-l {
@@ -1054,7 +1091,6 @@ a:focus-visible,
   right: 0;
   bottom: 0;
   z-index: 56;
-  width: 686px;
   max-width: calc(100vw - 32px);
   background: var(--surface);
   border-left: 1px solid var(--border);
@@ -1062,6 +1098,33 @@ a:focus-visible,
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+.lookalike-drawer-resize-handle {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  bottom: 0;
+  width: 7px;
+  z-index: 2;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.lookalike-drawer-resize-handle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background .15s var(--ease);
+}
+
+.lookalike-drawer-resize-handle:hover::after,
+.lookalike-drawer-resize-handle:active::after {
+  background: var(--accent);
 }
 
 .lookalike-drawer-header {
@@ -1765,15 +1828,12 @@ a:focus-visible,
   margin-bottom: 40px;
 }
 
-/* Decision panel — mirrors the Fix panel treatment (bordered card, no
-   top strip, pill badge only). Black pill instead of yellow so the
-   proposal/choice pairing reads as complementary. */
+/* Decision panel — no card, no box. Just the question and the two
+   glass verdict buttons, centered on the page; the reasoning step lives
+   entirely in a modal that only exists once you've picked one. */
 .decision-panel-wrap {
-  padding: 28px 30px 26px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  padding: 40px 20px 8px;
+  text-align: center;
 }
 
 .decision-panel-eyebrow {
@@ -1793,16 +1853,8 @@ a:focus-visible,
   font: 550 var(--fs-16)/1.5 var(--font-body);
   color: var(--text);
   letter-spacing: -.005em;
-  margin: 0 0 20px;
+  margin: 0 auto 22px;
   max-width: 640px;
-}
-
-.decision-panel-wrap .decision {
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin-top: 0;
-  box-shadow: none;
 }
 
 
@@ -2280,16 +2332,119 @@ a:focus-visible,
 }
 
 /* ---------------------------------------------------------------- decision gate */
-.decision {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  padding: 17px;
-  margin-top: 22px;
+.decision-choices {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 10px 0 40px;
 }
 
-.decision textarea {
+/* Same liquid-glass recipe as the "Ask Nexy" launcher (translucent
+   blurred surface, soft bevel), tinted red/green per verdict instead of
+   the neutral chrome — these two buttons ARE the decision, nothing else
+   commits until the modal's confirm step. */
+.decision-glass-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -.005em;
+  cursor: pointer;
+  transition: transform .15s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+}
+
+.decision-glass-btn:hover {
+  transform: translateY(-2px);
+}
+
+.decision-glass-btn:active {
+  transform: translateY(0) scale(.98);
+}
+
+.decision-glass-btn--reject {
+  background: rgba(216, 74, 58, .12);
+  border: 1px solid rgba(216, 74, 58, .3);
+  color: #b8382a;
+  box-shadow:
+    0 4px 16px rgba(216, 74, 58, .14),
+    inset 0 1px 1px rgba(255, 255, 255, .5);
+}
+
+.decision-glass-btn--reject:hover {
+  background: rgba(216, 74, 58, .18);
+  box-shadow:
+    0 8px 22px rgba(216, 74, 58, .22),
+    inset 0 1px 1px rgba(255, 255, 255, .5);
+}
+
+.decision-glass-btn--approve {
+  background: rgba(23, 134, 75, .12);
+  border: 1px solid rgba(23, 134, 75, .3);
+  color: #146b3d;
+  box-shadow:
+    0 4px 16px rgba(23, 134, 75, .14),
+    inset 0 1px 1px rgba(255, 255, 255, .5);
+}
+
+.decision-glass-btn--approve:hover {
+  background: rgba(23, 134, 75, .18);
+  box-shadow:
+    0 8px 22px rgba(23, 134, 75, .22),
+    inset 0 1px 1px rgba(255, 255, 255, .5);
+}
+
+/* the reasoning step — a floating modal, not part of the page at all
+   until a verdict is picked */
+.decision-modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(14, 14, 16, .32);
+  backdrop-filter: blur(3px);
+}
+
+.decision-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 71;
+  width: 440px;
+  max-width: calc(100vw - 32px);
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, .82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .6);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+}
+
+.decision-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-19);
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--text);
+  margin: 0 0 16px;
+}
+
+.decision-modal--reject .decision-modal-title {
+  color: #b8382a;
+}
+
+.decision-modal--approve .decision-modal-title {
+  color: #146b3d;
+}
+
+.decision-modal textarea {
   width: 100%;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
@@ -2297,27 +2452,27 @@ a:focus-visible,
   font: inherit;
   font-size: 14px;
   resize: vertical;
-  min-height: 54px;
-  background: var(--bg);
+  min-height: 84px;
+  background: var(--surface);
   color: var(--text);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-.decision textarea::placeholder {
+.decision-modal textarea::placeholder {
   color: var(--text-tertiary);
 }
 
-.decision textarea:focus {
+.decision-modal textarea:focus {
   outline: none;
   border-color: var(--accent);
 }
 
-.decision .btns {
+.decision-modal-btns {
   display: flex;
   gap: 10px;
 }
 
-.btn {
+.btn-confirm {
   flex: 1;
   border: none;
   border-radius: var(--radius-sm);
@@ -2328,40 +2483,49 @@ a:focus-visible,
   transition: filter .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease);
 }
 
-.btn:hover:not(:disabled) {
+.btn-confirm:hover:not(:disabled) {
   filter: brightness(.96);
-  box-shadow: var(--shadow-sm);
 }
 
-.btn:active:not(:disabled) {
+.btn-confirm:active:not(:disabled) {
   transform: scale(.98);
 }
 
-.btn.approve {
+.btn-confirm:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.btn-confirm.cancel {
+  background: var(--bg-subtle);
+  color: var(--muted);
+}
+
+.btn-confirm.cancel:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.btn-confirm.approve {
   background: var(--accent-gradient);
   color: var(--brand-ink);
   box-shadow: 0 4px 14px rgba(110, 86, 207, .28);
 }
 
-.btn.approve:hover:not(:disabled) {
+.btn-confirm.approve:hover:not(:disabled) {
   background: var(--accent-gradient-hover);
   box-shadow: 0 6px 20px rgba(232, 98, 143, .35);
   filter: none;
 }
 
-.btn.reject {
-  background: transparent;
-  color: var(--reject);
-  border: 1.5px solid #f4c6c0;
+.btn-confirm.reject {
+  background: var(--reject);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(216, 74, 58, .28);
 }
 
-.btn.reject:hover:not(:disabled) {
-  background: var(--reject-weak);
-}
-
-.btn:disabled {
-  opacity: .4;
-  cursor: default;
+.btn-confirm.reject:hover:not(:disabled) {
+  filter: brightness(.94);
 }
 
 .decided {
@@ -2369,6 +2533,8 @@ a:focus-visible,
   font-size: 14px;
   padding: 14px;
   border-radius: var(--radius-sm);
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .decided.approved {

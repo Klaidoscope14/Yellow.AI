@@ -7,7 +7,6 @@ import {
 } from "../lib/format";
 import { ROLE_LABEL } from "../lib/asks";
 import { DecisionGate } from "../components/DecisionGate";
-import { Disclosure } from "../components/Disclosure";
 import { RadialStat } from "../components/RadialStat";
 import { ComparisonBars } from "../components/ComparisonBars";
 import { PredictedDelta } from "../components/PredictedDelta";
@@ -32,7 +31,7 @@ export function FindingDetail() {
 
   return (
     <div className="page-container finding-page">
-      <button className="back" onClick={() => nav("/")}>&larr; Back to Issues</button>
+      <button className="back" onClick={() => nav("/")}>&larr; Back to Incidents</button>
 
       {/* ---- HERO ---- */}
       <header className="finding-hero-card">
@@ -175,7 +174,8 @@ export function FindingDetail() {
 
           {/* How we computed this */}
           {finding.impact && (
-            <Disclosure label="How we computed this">
+            <details className="finding-card inline-receipts">
+              <summary>How we computed this</summary>
               <p>
                 {finding.impact.derivation.split(/(?<=\.)\s+/).map((sentence, i) =>
                   /baseline/i.test(sentence) ? (
@@ -185,16 +185,17 @@ export function FindingDetail() {
                   ),
                 )}
               </p>
-            </Disclosure>
+            </details>
           )}
 
           {/* Evidence chain */}
           {finding.evidence.length > 0 && (
-            <Disclosure label="Evidence chain">
+            <details className="finding-card inline-receipts">
+              <summary>Evidence chain</summary>
               <ul className="evidence-list">
                 {finding.evidence.map((e, i) => <li key={i}>{e}</li>)}
               </ul>
-            </Disclosure>
+            </details>
           )}
         </aside>
       </div>
@@ -242,8 +243,8 @@ export function FindingDetail() {
               verification.verdict === "improved"
                 ? "better"
                 : verification.verdict === "regressed"
-                ? "worse"
-                : "neutral"
+                  ? "worse"
+                  : "neutral"
             }
           />
           <p className="riskline">
@@ -262,9 +263,7 @@ export function FindingDetail() {
       {prescription && (
         <section className="decision-panel-wrap">
           <p className="decision-panel-eyebrow">Decision</p>
-          <p className="decision-panel-lead">
-            Approve or reject. Your reason is recorded either way.
-          </p>
+
           <DecisionGate prescription={prescription} />
         </section>
       )}

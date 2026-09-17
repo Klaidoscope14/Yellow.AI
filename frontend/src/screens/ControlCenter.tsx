@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { useReport } from "../hooks/ReportContext";
 import { regressions, dismissed, needsDecisionCount, statusOf } from "../lib/report";
 import { SearchIcon } from "../components/Icon";
@@ -118,9 +119,14 @@ function KpiHero({
         disabled={lookalikes === 0}
       >
         <div className="kpi-hero-main">
-          <span className="kpi-hero-n">{lookalikesShown}</span>
+          <span className="kpi-hero-n kpi-hero-n--ok">{lookalikesShown}</span>
           <span className="kpi-hero-l">{lookalikes === 1 ? "lookalike cleared" : "lookalikes cleared"}</span>
         </div>
+        {lookalikes > 0 && (
+          <span className="kpi-hero-cta">
+            See why <ArrowRight size={12} strokeWidth={2.6} />
+          </span>
+        )}
       </button>
     </div>
   );
