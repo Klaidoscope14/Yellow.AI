@@ -2356,8 +2356,8 @@
     "daily_timeseries": {},
     "coverage": {
       "per_tenant": {
-        "northwind-retail": 0.9308,
-        "acme-bank": 0.7205
+        "acme-bank": 0.7205,
+        "northwind-retail": 0.9308
       },
       "basis": "v2_flow sessions emit no tool_call/kb_lookup steps"
     },

@@ -1,7 +1,7 @@
 {
   "team": "nexus-detection-squad",
   "corpus": "A",
-  "generated_at": "2026-09-13T19:41:54.633778+00:00",
+  "generated_at": "2026-09-17T13:36:10.354336+00:00",
   "system_notes": "Fully automated detection pipeline. All metric computation is deterministic DuckDB SQL (Golden Rule 1). Quality metrics segmented by judge_version (Golden Rule 3). 14-day rolling baselines via window functions. 6 detectors: 3 fault detectors + 3 decoy dismissers. Replay verification pending.",
   "metrics": [
     {
