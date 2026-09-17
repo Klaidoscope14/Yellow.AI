@@ -15,21 +15,46 @@ Our system is divided into three distinct operational layers, wrapped together b
 
 ## Prerequisites
 
-- Python 3.10+
-- Node.js (for the frontend)
+- **Python 3.10+** (Ensure Python and pip are installed and added to your PATH)
+- **Node.js** (v18 or higher recommended, for the frontend)
+- **Git** (to clone the repository)
 - The dataset (`nexus-loop-kit`) located at `Nexus-Loop/kit`
 
-## Setup (one-time)
+## Complete Setup Guide (New Device)
 
+Follow these steps to set up the project from scratch on a new device:
+
+### 1. Clone the Repository
 ```bash
-# 1. Python virtual env + backend/ai-ml deps (includes psutil, used by run_all.py
-#    to kill orphaned processes on our ports before (re)starting)
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+git clone https://github.com/AdityaKuranjekar/Yellow.AI.git
+cd Yellow.AI
+```
 
-# 2. Frontend deps
-cd frontend && npm install && cd ..
+### 2. Set Up the Python Environment
+Create and activate a virtual environment, then install the required Python dependencies.
+
+**On Windows:**
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+**On macOS/Linux:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+*(Note: Ensure you also have `psutil` installed, as `run_all.py` uses it to clean up orphaned ports: `pip install psutil`)*
+
+### 3. Install Frontend Dependencies
+Navigate to the frontend directory and install the Node.js packages:
+```bash
+cd frontend
+npm install
+cd ..
 ```
 
 ## How to Run
