@@ -1,55 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, CircleCheck, ShieldCheck, CircleHelp } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useReport } from "../hooks/ReportContext";
 import { regressions, dismissed, needsDecisionCount, statusOf } from "../lib/report";
 import { SearchIcon } from "../components/Icon";
 import { useCountUp } from "../hooks/useCountUp";
-import { IncidentsTable } from "../components/IncidentsTable";
+import { IssuesTable } from "../components/IssuesTable";
 import { SeverityDonut } from "../components/SeverityDonut";
 import type { Severity } from "../api/types";
 
 const SEVERITIES = ["critical", "high", "medium", "low"] as const;
-
-const statGroupVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
-};
-
-const statVariants = {
-  hidden: { opacity: 0, y: 10, scale: 0.9 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: "spring" as const, stiffness: 320, damping: 20 },
-  },
-};
-
-/** One outcome row inside the Outcomes card — icon chip + label + number,
- * each in its own semantic tone so the list reads at a glance. */
-function OutcomeRow({
-  n,
-  label,
-  icon: Icon,
-  tone,
-}: {
-  n: number;
-  label: string;
-  icon: typeof Search;
-  tone: "neutral" | "ok" | "pending";
-}) {
-  return (
-    <motion.li className={`outcome-row outcome-row--${tone}`} variants={statVariants}>
-      <span className="outcome-icon">
-        <Icon size={12} strokeWidth={2.4} aria-hidden />
-      </span>
-      <span className="outcome-label">{label}</span>
-      <span className="outcome-n">{n}</span>
-    </motion.li>
-  );
-}
 
 interface CursorRect {
   left: number;
@@ -158,9 +119,14 @@ function KpiHero({
         disabled={lookalikes === 0}
       >
         <div className="kpi-hero-main">
-          <span className="kpi-hero-n">{lookalikesShown}</span>
+          <span className="kpi-hero-n kpi-hero-n--ok">{lookalikesShown}</span>
           <span className="kpi-hero-l">{lookalikes === 1 ? "lookalike cleared" : "lookalikes cleared"}</span>
         </div>
+        {lookalikes > 0 && (
+          <span className="kpi-hero-cta">
+            See why <ArrowRight size={12} strokeWidth={2.6} />
+          </span>
+        )}
       </button>
     </div>
   );
@@ -200,12 +166,11 @@ export function ControlCenter() {
   if (!report) return null;
 
   const pending = needsDecisionCount(report);
-  const verified = report.verifications.filter((v) => v.verdict === "improved").length;
 
   return (
     <div className="page-container page-container-wide">
       <div className="page-header">
-        <h1>Incidents</h1>
+        <h1>Issues</h1>
         <p>
           {pending > 0 ? (
             <><span className="needs-pill">Needs attention</span> Everything on this page is computed from the report.</>
@@ -215,29 +180,11 @@ export function ControlCenter() {
         </p>
       </div>
 
-      {/* KPI + Outcomes stack in one column; severity sits beside them as
-          the other column, stretching to match their combined height. */}
-      <div className="incidents-stat-row">
-        <div className="incidents-stat-col">
-          {pending > 0 && (
-            <KpiHero pending={pending} bySeverity={pendingBySeverity} lookalikes={dism.length} />
-          )}
-
-          <div className="outcomes-card">
-            <h2>Outcomes</h2>
-            <motion.ul
-              className="outcome-list"
-              variants={statGroupVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              <OutcomeRow n={regs.length} label="Found" icon={Search} tone="neutral" />
-              <OutcomeRow n={dism.length} label="Cleared" icon={CircleCheck} tone="ok" />
-              {verified > 0 && <OutcomeRow n={verified} label="Verified" icon={ShieldCheck} tone="ok" />}
-              <OutcomeRow n={report.gaps.length} label="Refused" icon={CircleHelp} tone="pending" />
-            </motion.ul>
-          </div>
-        </div>
+      {/* KPI and severity sit side by side as equal-weight cards. */}
+      <div className="issues-stat-row">
+        {pending > 0 && (
+          <KpiHero pending={pending} bySeverity={pendingBySeverity} lookalikes={dism.length} />
+        )}
 
         {regs.length > 0 && <SeverityDonut counts={sevCounts} />}
       </div>
@@ -247,7 +194,7 @@ export function ControlCenter() {
           <SearchIcon />
           <input
             className="search-input"
-            placeholder="Search incident, tenant or intent&hellip;"
+            placeholder="Search issue, tenant or intent&hellip;"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -259,7 +206,7 @@ export function ControlCenter() {
         />
       </div>
 
-      <IncidentsTable findings={filtered} report={report} />
+      <IssuesTable findings={filtered} report={report} />
 
       {dism.length > 0 && (
         <section className="strip">

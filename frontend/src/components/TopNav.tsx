@@ -4,13 +4,13 @@ import { CircleAlert, Users, Wrench, Lightbulb } from "lucide-react";
 import { NexusWordmark } from "./NexusWordmark";
 
 const LINKS = [
-  { to: "/", label: "Incidents", end: true, icon: CircleAlert },
+  { to: "/", label: "Issues", end: true, icon: CircleAlert },
   { to: "/dismissed", label: "Lookalikes", end: false, icon: Users },
   { to: "/gaps", label: "Diagnostics", end: false, icon: Wrench },
   { to: "/decisions", label: "Decisions", end: false, icon: Lightbulb },
 ];
 
-export function TopNav({ team, pending }: { team: string; pending: number }) {
+export function TopNav() {
   // While one tab is hovered, every other tab — including the active one —
   // collapses back to its icon circle, so only one is ever expanded at a time.
   const [hovered, setHovered] = useState<string | null>(null);
@@ -20,10 +20,6 @@ export function TopNav({ team, pending }: { team: string; pending: number }) {
       <div className="topnav-inner">
         <div className="topnav-brand">
           <span className="nexus-wordmark"><NexusWordmark height={24} /></span>
-          <div className="topnav-brand-text">
-            <span className="topnav-title">Loop</span>
-            <span className="topnav-subtitle">{team}</span>
-          </div>
         </div>
 
         <nav className="topnav-links" onMouseLeave={() => setHovered(null)}>
@@ -50,14 +46,11 @@ export function TopNav({ team, pending }: { team: string; pending: number }) {
         </nav>
 
         <div className="topnav-right">
-          <span className={`topnav-status ${pending > 0 ? "needs" : "ok"}`}>
-            {pending > 0 ? `${pending} awaiting decision` : "All clear"}
-          </span>
-          <div className="topnav-shortcuts">
-            <span><kbd>j</kbd><kbd>k</kbd> navigate</span>
-            <span><kbd>&#9166;</kbd> open</span>
-            <span><kbd>&#8984;K</kbd> search</span>
-          </div>
+          <button type="button" className="topnav-live">
+            <span className="topnav-live-dot" aria-hidden />
+            Live
+          </button>
+
         </div>
       </div>
     </header>

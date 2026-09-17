@@ -49,7 +49,7 @@ export function Chat() {
   const nav = useNavigate();
 
   useEffect(() => {
-    getChatSuggestions().then(setChips).catch(() => {});
+    getChatSuggestions().then(setChips).catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -114,9 +114,8 @@ export function Chat() {
       {/* ── "Ask AI" pill that morphs into the input panel ── */}
       <div className="ai-bar">
         <div
-          className={`ai-shell${open ? " ai-shell--open" : ""}${
-            mode === "chat" ? " ai-shell--chat" : ""
-          }`}
+          className={`ai-shell${open ? " ai-shell--open" : ""}${mode === "chat" ? " ai-shell--chat" : ""
+            }`}
         >
           <div className="ai-glass-layer" />
 
@@ -271,7 +270,7 @@ export function Chat() {
                   <span className="ai-orb-a" />
                   <span className="ai-orb-b" />
                 </span>
-                Ask AI
+                Ask Nexy
               </motion.button>
             )}
           </AnimatePresence>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useReport } from "../hooks/ReportContext";
 import { dismissed } from "../lib/report";
@@ -6,7 +6,14 @@ import { pct } from "../lib/format";
 import { ChevronRightIcon, Icon } from "../components/Icon";
 import type { Finding } from "../api/types";
 
-// Same stagger/spring the incidents table uses, for visual parity.
+const DRAWER_DEFAULT_W = 686;
+const DRAWER_MIN_W = 420;
+
+function drawerMaxW() {
+  return Math.min(window.innerWidth - 32, 1080);
+}
+
+// Same stagger/spring the issues table uses, for visual parity.
 const tbodyVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
@@ -21,7 +28,39 @@ const rowVariants = {
   },
 } as const;
 
-function LookalikeDrawer({ finding, onClose }: { finding: Finding; onClose: () => void }) {
+function LookalikeDrawer({
+  finding,
+  onClose,
+  width,
+  onWidthChange,
+}: {
+  finding: Finding;
+  onClose: () => void;
+  width: number;
+  onWidthChange: (w: number) => void;
+}) {
+  const dragging = useRef(false);
+
+  const onHandlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragging.current = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+
+  const onHandlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
+    const next = window.innerWidth - e.clientX;
+    onWidthChange(Math.min(Math.max(next, DRAWER_MIN_W), drawerMaxW()));
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragging.current = false;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  };
+
   return (
     <>
       <motion.div
@@ -34,12 +73,24 @@ function LookalikeDrawer({ finding, onClose }: { finding: Finding; onClose: () =
       />
       <motion.aside
         className="lookalike-drawer"
+        style={{ width }}
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", stiffness: 320, damping: 34 }}
         aria-label="Lookalike details"
       >
+        <div
+          className="lookalike-drawer-resize-handle"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize panel"
+          onPointerDown={onHandlePointerDown}
+          onPointerMove={onHandlePointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+        />
+
         <div className="lookalike-drawer-header">
           <span className="lookalike-drawer-eyebrow">Cleared &middot; not a regression</span>
           <button className="lookalike-drawer-close" onClick={onClose} aria-label="Close">
@@ -86,6 +137,7 @@ function LookalikeDrawer({ finding, onClose }: { finding: Finding; onClose: () =
 export function Dismissed() {
   const { report } = useReport();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drawerWidth, setDrawerWidth] = useState(DRAWER_DEFAULT_W);
   if (!report) return null;
 
   const items = dismissed(report);
@@ -102,9 +154,9 @@ export function Dismissed() {
       </div>
 
       {items.length > 0 ? (
-        <div className="incidents-table-wrap">
-          <div className="incidents-table-scroll">
-            <table className="incidents-table">
+        <div className="issues-table-wrap">
+          <div className="issues-table-scroll">
+            <table className="issues-table">
               <colgroup>
                 <col style={{ width: "auto" }} />
                 <col style={{ width: 220 }} />
@@ -112,7 +164,7 @@ export function Dismissed() {
               </colgroup>
               <thead>
                 <tr>
-                  <th>Incident</th>
+                  <th>Issues</th>
                   <th>Tenant &middot; Intent</th>
                   <th aria-hidden />
                 </tr>
@@ -143,7 +195,14 @@ export function Dismissed() {
       )}
 
       <AnimatePresence>
-        {selected && <LookalikeDrawer finding={selected} onClose={() => setSelectedId(null)} />}
+        {selected && (
+          <LookalikeDrawer
+            finding={selected}
+            onClose={() => setSelectedId(null)}
+            width={drawerWidth}
+            onWidthChange={setDrawerWidth}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

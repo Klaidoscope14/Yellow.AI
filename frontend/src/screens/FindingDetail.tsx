@@ -28,6 +28,10 @@ export function FindingDetail() {
   const verification = prescription ? verificationFor(report, prescription) : undefined;
   const status = statusOf(report, finding);
   const owner = (finding.audience ?? []).map((a) => ROLE_LABEL[a as Audience] ?? a).join(", ");
+  // Diagnosis evidence (why we believe the cause) and finding evidence (why
+  // this is a regression at all) used to live in two separate "Evidence"
+  // boxes — same section, so they're merged into one list here.
+  const allEvidence = Array.from(new Set([...(diagnosis?.evidence ?? []), ...finding.evidence]));
 
   return (
     <div className="page-container finding-page">
@@ -67,137 +71,154 @@ export function FindingDetail() {
         </div>
       </header>
 
-      {/* ---- Two-column bento: narrative on the left, stats + diagnosis on the right ---- */}
-      <div className="finding-grid">
-        <div className="finding-col-main">
-          {/* IMPACT: one hero number, everything else as inline context. */}
-          {finding.impact && (
-            <section className="finding-card impact-card">
-              <div className="impact-hero-primary">
-                <span className="impact-hero-n">{int(finding.impact.conversations_affected)}</span>
-                <span className="impact-hero-l">conversations affected</span>
+      {/* ---- Four labeled groups instead of a left/right bento split:
+              Findings (what was detected), Impact (who/how much it hurt),
+              Diagnosis (why it happened), Evidence (what backs that up).
+              Same data as before, just arranged so each card sits under
+              the group it actually belongs to. ---- */}
+      <div className="finding-groups">
+        {/* FINDINGS — the detected regression itself */}
+        {finding.observed != null && finding.expected != null && (
+          <section className="finding-group">
+            <h2 className="finding-group-title">Findings</h2>
+            <div className="finding-group-cards">
+              <div className="finding-card">
+                <p className="claim-sentence">
+                  {claimSentence(finding.metric, finding.expected, finding.observed)}
+                </p>
+                <ComparisonBars
+                  label={finding.metric}
+                  baseline={finding.expected}
+                  baselineLabel="Expected"
+                  observed={finding.observed}
+                  observedLabel="Observed"
+                  format={(v) => fmtMetric(finding.metric, v)}
+                  lowerIsWorse={lowerIsWorseFor(finding.metric)}
+                />
               </div>
-              <p className="impact-hero-context">
-                <strong>{pct(finding.impact.share_of_traffic)}</strong> of tenant traffic
-                <span className="sep">&middot;</span>
-                <strong>{finding.impact.days_running} days</strong> running
-                {finding.impact.cost_usd != null && (
-                  <>
-                    <span className="sep">&middot;</span>
-                    <strong>{money(finding.impact.cost_usd)}</strong> total cost
-                  </>
-                )}
-              </p>
-            </section>
-          )}
-
-          {/* CLAIM + BAR */}
-          {finding.observed != null && finding.expected != null && (
-            <section className="finding-card">
-              <p className="claim-sentence">
-                {claimSentence(finding.metric, finding.expected, finding.observed)}
-              </p>
-              <ComparisonBars
-                label={finding.metric}
-                baseline={finding.expected}
-                baselineLabel="Expected"
-                observed={finding.observed}
-                observedLabel="Observed"
-                format={(v) => fmtMetric(finding.metric, v)}
-                lowerIsWorse={lowerIsWorseFor(finding.metric)}
-              />
-            </section>
-          )}
-
-          {/* What happened to these users */}
-          {finding.impact?.downstream && usersSentence(finding.impact.downstream) && (
-            <section className="finding-card">
-              <h2>What happened to these users</h2>
-              <p className="lead">{usersSentence(finding.impact.downstream)}</p>
-            </section>
-          )}
-
-          {/* If nobody acts */}
-          {finding.if_nothing_changes && (
-            <section className="finding-card consequence-card">
-              <h2>If nobody acts</h2>
-              <p className="consequence">{finding.if_nothing_changes}</p>
-            </section>
-          )}
-        </div>
-
-        <aside className="finding-col-side">
-          {/* Diagnosis: confidence ring leads, cause + evidence follow */}
-          {diagnosis && (
-            <section className="finding-card diagnosis-card">
-              <h2>Diagnosis</h2>
-              <div className="diagnosis-body">
-                <RadialStat value={diagnosis.confidence} size={64} strokeWidth={6} />
-                <div>
-                  <p className="lead" style={{ marginBottom: 6 }}>{plainCause(diagnosis.cause_class)}</p>
-                  <p>
-                    Cause: <strong>{diagnosis.cause_class}</strong>
-                  </p>
-                  {diagnosis.attributed_change && (
-                    <p className="muted small">
-                      Attributed to {diagnosis.attributed_change.kind} on day {diagnosis.attributed_change.day}
-                    </p>
-                  )}
-                </div>
-              </div>
-              {diagnosis.evidence.length > 0 && (
-                <details className="receipts" style={{ marginTop: 14 }}>
-                  <summary />
-                  <div className="body">
-                    <ul>
-                      {diagnosis.evidence.map((e, i) => <li key={i}>{e}</li>)}
-                    </ul>
-                  </div>
-                </details>
-              )}
-            </section>
-          )}
-
-          {/* Severity spectrum — where this finding sits, at a glance */}
-          <section className="finding-card severity-meter-card">
-            <h2>Severity</h2>
-            <div className="severity-meter">
-              <span className="severity-meter-marker" style={{ left: `${SEVERITY_POSITION[finding.severity]}%` }} />
-            </div>
-            <div className="severity-meter-scale">
-              <span>Low</span>
-              <span>Medium</span>
-              <span>High</span>
-              <span>Critical</span>
             </div>
           </section>
+        )}
 
-          {/* How we computed this */}
-          {finding.impact && (
-            <details className="finding-card inline-receipts">
-              <summary>How we computed this</summary>
-              <p>
-                {finding.impact.derivation.split(/(?<=\.)\s+/).map((sentence, i) =>
-                  /baseline/i.test(sentence) ? (
-                    <strong key={i} className="baseline-highlight">{sentence} </strong>
-                  ) : (
-                    <span key={i}>{sentence} </span>
-                  ),
+        {/* IMPACT — who/how much it hurt. The headline stats get their own
+            small cards; the two narrative consequences follow underneath. */}
+        {(finding.impact || finding.if_nothing_changes) && (
+          <section className="finding-group">
+            <h2 className="finding-group-title">Impact</h2>
+
+            {finding.impact && (
+              <div className="finding-stat-row">
+                <div className="finding-stat-card">
+                  <span className="finding-stat-n">{int(finding.impact.conversations_affected)}</span>
+                  <span className="finding-stat-l">conversations affected</span>
+                </div>
+                <div className="finding-stat-card">
+                  <span className="finding-stat-n">{pct(finding.impact.share_of_traffic)}</span>
+                  <span className="finding-stat-l">of tenant traffic</span>
+                </div>
+                <div className="finding-stat-card">
+                  <span className="finding-stat-n">{finding.impact.days_running}</span>
+                  <span className="finding-stat-l">days running</span>
+                </div>
+                {finding.impact.cost_usd != null && (
+                  <div className="finding-stat-card">
+                    <span className="finding-stat-n">{money(finding.impact.cost_usd)}</span>
+                    <span className="finding-stat-l">total cost</span>
+                  </div>
                 )}
-              </p>
-            </details>
-          )}
+              </div>
+            )}
 
-          {/* Evidence chain */}
-          {finding.evidence.length > 0 && (
-            <details className="finding-card inline-receipts">
-              <summary>Evidence chain</summary>
-              <ul className="evidence-list">
-                {finding.evidence.map((e, i) => <li key={i}>{e}</li>)}
-              </ul>
-            </details>
-          )}
-        </aside>
+            <div className="finding-group-cards">
+              {finding.impact?.downstream && usersSentence(finding.impact.downstream) && (
+                <div className="finding-card">
+                  <h2>What happened to these users</h2>
+                  <p className="lead">{usersSentence(finding.impact.downstream)}</p>
+                </div>
+              )}
+
+              {finding.if_nothing_changes && (
+                <div className="finding-card consequence-card">
+                  <h2>If nobody acts</h2>
+                  <p className="consequence">{finding.if_nothing_changes}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* DIAGNOSIS — why it happened, and how sure we are */}
+        {diagnosis && (
+          <section className="finding-group">
+            <h2 className="finding-group-title">Diagnosis</h2>
+            <div className="finding-group-cards">
+              <div className="finding-card diagnosis-card">
+                <div className="diagnosis-body">
+                  <RadialStat value={diagnosis.confidence} size={64} strokeWidth={6} />
+                  <div>
+                    <p className="lead" style={{ marginBottom: 6 }}>{plainCause(diagnosis.cause_class)}</p>
+                    <p>
+                      Cause: <strong>{diagnosis.cause_class}</strong>
+                    </p>
+                    {diagnosis.attributed_change && (
+                      <p className="muted small">
+                        Attributed to {diagnosis.attributed_change.kind} on day {diagnosis.attributed_change.day}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="finding-card severity-meter-card">
+                <h2>Severity</h2>
+                <div className="severity-meter">
+                  <span className="severity-meter-marker" style={{ left: `${SEVERITY_POSITION[finding.severity]}%` }} />
+                </div>
+                <div className="severity-meter-scale">
+                  <span>Low</span>
+                  <span>Medium</span>
+                  <span>High</span>
+                  <span>Critical</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* EVIDENCE — what backs the diagnosis up. Merges the diagnosis's
+            own evidence with the finding's, which used to be two
+            separately-labeled "Evidence" lists in two different
+            dropdowns; de-duplicated into one plain card. */}
+        {(finding.impact || allEvidence.length > 0) && (
+          <section className="finding-group">
+            <h2 className="finding-group-title">Evidence</h2>
+            <div className="finding-group-cards">
+              {finding.impact && (
+                <div className="finding-card">
+                  <h2>How we computed this</h2>
+                  <p>
+                    {finding.impact.derivation.split(/(?<=\.)\s+/).map((sentence, i) =>
+                      /baseline/i.test(sentence) ? (
+                        <strong key={i} className="baseline-highlight">{sentence} </strong>
+                      ) : (
+                        <span key={i}>{sentence} </span>
+                      ),
+                    )}
+                  </p>
+                </div>
+              )}
+
+              {allEvidence.length > 0 && (
+                <div className="finding-card">
+                  <h2>Chain</h2>
+                  <ul className="evidence-list">
+                    {allEvidence.map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* ---- PROPOSAL: what Nexus wants to change ---- */}
@@ -243,8 +264,8 @@ export function FindingDetail() {
               verification.verdict === "improved"
                 ? "better"
                 : verification.verdict === "regressed"
-                ? "worse"
-                : "neutral"
+                  ? "worse"
+                  : "neutral"
             }
           />
           <p className="riskline">
@@ -263,9 +284,7 @@ export function FindingDetail() {
       {prescription && (
         <section className="decision-panel-wrap">
           <p className="decision-panel-eyebrow">Decision</p>
-          <p className="decision-panel-lead">
-            Approve or reject. Your reason is recorded either way.
-          </p>
+
           <DecisionGate prescription={prescription} />
         </section>
       )}

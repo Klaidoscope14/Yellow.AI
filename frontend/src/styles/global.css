@@ -7,9 +7,10 @@
    floating nav pill and headings, and a semantic hue set (red/amber/
    green/blue) reused system-wide instead of one-off tile decoration —
    deliberately untouched by the rebrand so severity and status still
-   read correctly against the new accent. A serif display face carries
-   the few big headlines; body stays a modern sans. Motion is short and
-   quiet. */
+   read correctly against the new accent. One typeface — the system UI
+   font (San Francisco on Apple platforms) — is used everywhere, carried
+   by a single four-level scale: large title, title, subtitle, body.
+   Motion is short and quiet. */
 :root {
   --bg: #faf9ff;
   --bg-subtle: #f1eefb;
@@ -96,9 +97,10 @@
   --ease-glass: cubic-bezier(0.32, 0.72, 0, 1);
   --maxw: 760px;
 
-  /* type — modern geometric sans for body/UI, serif kept for editorial H1 */
-  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  /* type — one system font everywhere (San Francisco on Apple devices,
+     its cross-platform equivalents elsewhere), no serif, no second family */
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-body);
   --fs-11: .6875rem;
   --fs-12: .75rem;
   --fs-13: .8125rem;
@@ -109,6 +111,17 @@
   --fs-32: 2rem;
   --fs-42: 2.625rem;
   --fs-56: 3.5rem;
+
+  /* Apple-style four-level hierarchy. Every heading/label/body string in
+     the app should resolve to one of these four — nothing in between. */
+  --lh-tight: 1.15;
+  --large-title: 700 var(--fs-32)/1.15 var(--font-display);
+  --large-title-tracking: -.015em;
+  --title: 700 var(--fs-19)/1.3 var(--font-display);
+  --title-tracking: -.005em;
+  --subtitle: 700 var(--fs-11)/1.3 var(--font-body);
+  --subtitle-tracking: .07em;
+  --body: 400 var(--fs-14)/1.55 var(--font-body);
 }
 
 * {
@@ -356,23 +369,54 @@ a:focus-visible,
   justify-self: end;
 }
 
-.topnav-status {
-  font-size: 12px;
-  font-weight: 700;
+/* compact live indicator — a plain "Live" button with an always-blinking
+   dot, so it doesn't compete for attention with the active-tab gradient
+   right next to it */
+.topnav-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   padding: 6px 12px;
   border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
   letter-spacing: -.005em;
   white-space: nowrap;
+  cursor: default;
 }
 
-.topnav-status.needs {
+.topnav-live-dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
   background: var(--accent);
-  color: var(--brand-ink);
+  animation: liveBlink 1.8s ease-in-out infinite;
 }
 
-.topnav-status.ok {
-  background: var(--status-ok-bg);
-  color: var(--status-ok-ink);
+@keyframes liveBlink {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(110, 86, 207, .5);
+  }
+
+  50% {
+    opacity: .5;
+  }
+
+  70% {
+    box-shadow: 0 0 0 5px rgba(110, 86, 207, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topnav-live-dot {
+    animation: none;
+  }
 }
 
 .topnav-shortcuts {
@@ -452,26 +496,20 @@ a:focus-visible,
    that stretch to fill the row together. Flex, not fixed widths pinned to
    opposite edges — with 2 or 3 cards present, each grows to take its fair
    share, so there's never leftover width for a gap to form in. */
-.incidents-stat-row {
+.issues-stat-row {
   display: flex;
   align-items: stretch;
   gap: 16px;
   margin-bottom: 22px;
 }
 
-.incidents-stat-row>* {
+.issues-stat-row>* {
   flex: 1 1 0;
   min-width: 0;
 }
 
-.incidents-stat-col {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
 @media (max-width: 860px) {
-  .incidents-stat-row {
+  .issues-stat-row {
     flex-direction: column;
   }
 }
@@ -665,6 +703,7 @@ a:focus-visible,
    lot of unused space next to it. */
 .kpi-hero {
   display: flex;
+  flex-direction: column;
   align-items: stretch;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -674,12 +713,15 @@ a:focus-visible,
 }
 
 .kpi-hero-section {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: 16px 20px;
-  text-align: left;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 20px;
+  text-align: center;
   background: none;
   border: none;
   font: inherit;
@@ -699,10 +741,38 @@ a:focus-visible,
   cursor: default;
 }
 
+.kpi-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 14px;
+  font-size: var(--fs-11);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--subtitle-tracking);
+  color: var(--ok);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity .18s var(--ease), transform .18s var(--ease);
+}
+
+.kpi-hero-cta svg {
+  transition: transform .18s var(--ease);
+}
+
+.kpi-hero-section--link:not(:disabled):hover .kpi-hero-cta {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.kpi-hero-section--link:not(:disabled):hover .kpi-hero-cta svg {
+  transform: translateX(2px);
+}
+
 .kpi-hero-divider {
-  width: 1px;
+  height: 1px;
+  width: 100%;
   flex-shrink: 0;
-  align-self: stretch;
   background: var(--border);
 }
 
@@ -711,6 +781,7 @@ a:focus-visible,
 .kpi-hero-sevs {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
   margin-top: 10px;
 }
@@ -718,7 +789,7 @@ a:focus-visible,
 .kpi-hero-sev {
   display: inline-flex;
   align-items: center;
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
@@ -732,6 +803,7 @@ a:focus-visible,
 .kpi-hero-main {
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 .kpi-hero-n {
@@ -741,107 +813,15 @@ a:focus-visible,
   font-variant-numeric: tabular-nums;
 }
 
+.kpi-hero-n--ok {
+  color: var(--ok);
+}
+
 .kpi-hero-l {
   font-size: var(--fs-13);
   color: var(--muted);
   font-weight: 600;
   margin-top: 4px;
-}
-
-/* Outcomes card: found / cleared / verified / refused as rows inside one
-   card (matching the KPI and severity cards' chrome), each with its own
-   icon chip and semantic tone instead of one undifferentiated sentence.
-   The list centers vertically so it uses the card's full stretched height
-   instead of leaving dead air below the last row. */
-.outcomes-card {
-  display: flex;
-  flex-direction: column;
-  padding: 16px 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  background: var(--surface);
-}
-
-.outcomes-card h2 {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--muted);
-  margin: 0 0 4px;
-  font-weight: 700;
-}
-
-.outcome-list {
-  flex: 1;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.outcome-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 7px 0;
-  border-top: 1px solid var(--border);
-}
-
-.outcome-row:first-child {
-  border-top: none;
-}
-
-.outcome-icon {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.outcome-label {
-  flex: 1;
-  font-size: var(--fs-12);
-  font-weight: 600;
-  color: var(--text);
-}
-
-.outcome-n {
-  font-weight: 800;
-  font-size: var(--fs-14);
-  font-variant-numeric: tabular-nums;
-}
-
-.outcome-row--neutral .outcome-icon {
-  background: var(--bg-subtle);
-  color: var(--muted);
-}
-
-.outcome-row--neutral .outcome-n {
-  color: var(--text);
-}
-
-.outcome-row--ok .outcome-icon {
-  background: var(--status-ok-bg);
-  color: var(--status-ok-ink);
-}
-
-.outcome-row--ok .outcome-n {
-  color: var(--status-ok-ink);
-}
-
-.outcome-row--pending .outcome-icon {
-  background: var(--accent-weak);
-  color: var(--sem-pending);
-}
-
-.outcome-row--pending .outcome-n {
-  color: var(--sem-pending);
 }
 
 /* ---------------------------------------------------------------- search + severity filter (interactive → keeps chrome) */
@@ -938,7 +918,7 @@ a:focus-visible,
    The primary work surface on the app. Rounded card, sticky header on a
    soft tint, sortable + resizable columns, generous row padding, keyboard
    focus ring. Numbers right-aligned like any real data table. */
-.incidents-table-wrap {
+.issues-table-wrap {
   margin: 6px 0 28px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -947,25 +927,25 @@ a:focus-visible,
   box-shadow: var(--shadow-sm);
 }
 
-.incidents-table-scroll {
+.issues-table-scroll {
   max-height: 64vh;
   overflow: auto;
 }
 
-.incidents-table {
+.issues-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
   font-size: var(--fs-13);
 }
 
-.incidents-table thead th {
+.issues-table thead th {
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--bg-subtle);
   text-align: left;
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
   letter-spacing: .06em;
   font-weight: 700;
@@ -977,12 +957,12 @@ a:focus-visible,
   white-space: nowrap;
 }
 
-.incidents-table thead th:hover {
+.issues-table thead th:hover {
   color: var(--text);
 }
 
-.incidents-table th.num,
-.incidents-table td.num {
+.issues-table th.num,
+.issues-table td.num {
   text-align: right;
 }
 
@@ -1019,7 +999,7 @@ a:focus-visible,
   background: var(--accent);
 }
 
-.incidents-table tbody tr {
+.issues-table tbody tr {
   cursor: pointer;
   transition: background-color .12s var(--ease);
 }
@@ -1029,7 +1009,7 @@ a:focus-visible,
    pseudo-element, which needs a containing block that `position: relative`
    on a <tr> doesn't reliably establish (it escapes to some ancestor and
    floats mid-table instead of tracking its own row). */
-.incidents-table tbody tr:not(:last-child) {
+.issues-table tbody tr:not(:last-child) {
   background-image: linear-gradient(to right,
       transparent 0,
       transparent 20px,
@@ -1042,43 +1022,43 @@ a:focus-visible,
   background-size: 100% 1px;
 }
 
-.incidents-table tbody tr:hover {
+.issues-table tbody tr:hover {
   background-color: var(--surface-hover);
 }
 
-.incidents-table tbody tr.kbd-focused {
+.issues-table tbody tr.kbd-focused {
   background-color: var(--accent-weak);
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
-.incidents-table td {
+.issues-table td {
   padding: 19px 14px;
   vertical-align: middle;
   color: var(--text);
 }
 
-.incidents-table td.title-cell {
+.issues-table td.title-cell {
   white-space: normal;
   line-height: 1.5;
   font-weight: 550;
 }
 
-.incidents-table td.muted {
+.issues-table td.muted {
   color: var(--muted);
 }
 
-.incidents-table td .sev-dot {
+.issues-table td .sev-dot {
   margin-right: 6px;
 }
 
-.incidents-table .chevron-cell {
+.issues-table .chevron-cell {
   color: var(--text-tertiary);
   padding-left: 6px;
   padding-right: 12px;
   text-align: right;
 }
 
-.incidents-table tbody tr:hover .chevron-cell {
+.issues-table tbody tr:hover .chevron-cell {
   color: var(--text);
 }
 
@@ -1086,12 +1066,12 @@ a:focus-visible,
    selected — bolder than the keyboard-focus ring elsewhere, since this
    one persists for as long as the drawer is open, not just a transient
    nav cue. Built from the theme's own accent, not a literal color swap. */
-.incidents-table tbody tr.lookalike-row--selected {
+.issues-table tbody tr.lookalike-row--selected {
   background-color: var(--accent-weak);
   box-shadow: inset 4px 0 0 0 var(--accent);
 }
 
-.incidents-table tbody tr.lookalike-row--selected:hover {
+.issues-table tbody tr.lookalike-row--selected:hover {
   background-color: var(--accent-weak);
 }
 
@@ -1111,7 +1091,6 @@ a:focus-visible,
   right: 0;
   bottom: 0;
   z-index: 56;
-  width: 686px;
   max-width: calc(100vw - 32px);
   background: var(--surface);
   border-left: 1px solid var(--border);
@@ -1119,6 +1098,33 @@ a:focus-visible,
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+.lookalike-drawer-resize-handle {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  bottom: 0;
+  width: 7px;
+  z-index: 2;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.lookalike-drawer-resize-handle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background .15s var(--ease);
+}
+
+.lookalike-drawer-resize-handle:hover::after,
+.lookalike-drawer-resize-handle:active::after {
+  background: var(--accent);
 }
 
 .lookalike-drawer-header {
@@ -1135,9 +1141,9 @@ a:focus-visible,
 }
 
 .lookalike-drawer-eyebrow {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: var(--subtitle-tracking);
   font-weight: 700;
   color: var(--muted);
 }
@@ -1191,9 +1197,9 @@ a:focus-visible,
 }
 
 .lookalike-drawer-section h3 {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   margin: 0 0 8px;
   font-weight: 700;
@@ -1242,7 +1248,7 @@ a:focus-visible,
 .strip summary {
   cursor: pointer;
   color: var(--text);
-  font-size: 13.5px;
+  font-size: var(--fs-13);
   list-style: none;
 }
 
@@ -1263,7 +1269,7 @@ a:focus-visible,
 
 .strip .reason {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--fs-13);
   padding: 8px 0 2px 22px;
 }
 
@@ -1275,7 +1281,7 @@ a:focus-visible,
   background: none;
   border: none;
   color: var(--accent);
-  font-size: 13.5px;
+  font-size: var(--fs-13);
   cursor: pointer;
   padding: 0;
   font-weight: 600;
@@ -1285,7 +1291,7 @@ a:focus-visible,
   background: none;
   border: none;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--fs-13);
   cursor: pointer;
   padding: 0;
   margin: 0 0 16px;
@@ -1342,14 +1348,6 @@ a:focus-visible,
   font-weight: 750;
 }
 
-/* the PS's own example phrasing ("X fell from 0.86 to 0.31"), made literal */
-.claim-sentence {
-  font: 650 var(--fs-19)/1.45 var(--font-display);
-  letter-spacing: -.01em;
-  color: var(--text);
-  margin: 0 0 12px;
-}
-
 /* the sentence naming the baseline, emphasized in place within the
    derivation paragraph rather than repeated on its own line */
 .baseline-highlight {
@@ -1384,27 +1382,64 @@ a:focus-visible,
   box-shadow: var(--shadow-sm);
 }
 
-/* Two-column bento: narrative + stat/diagnosis sidebar */
-.finding-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  align-items: start;
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-.finding-col-main,
-.finding-col-side {
+/* Four labeled groups (Findings / Impact / Diagnosis / Evidence) instead
+   of an unlabeled left/right bento split — each stacks full-width, with
+   its own cards laid out in a wrapping grid so 1 or 2 cards per group
+   never look stranded next to empty space. */
+.finding-groups {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  min-width: 0;
+  gap: 40px;
+  margin-bottom: 40px;
 }
 
-@media (max-width: 900px) {
-  .finding-grid {
-    grid-template-columns: 1fr;
-  }
+.finding-group-title {
+  font: 700 var(--fs-19)/1.3 var(--font-display);
+  letter-spacing: -.005em;
+  color: var(--text);
+  margin: 0 0 16px;
+}
+
+/* align-items: stretch (not the grid default "start") so cards sharing a
+   row match height instead of leaving dead space next to a shorter
+   neighbor — e.g. the diagnosis ring card next to the shorter severity
+   card. */
+.finding-group-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: stretch;
+  gap: 20px;
+}
+
+.finding-stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.finding-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.finding-stat-n {
+  font: 800 30px/1 var(--font-body);
+  letter-spacing: -.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.finding-stat-l {
+  font-size: var(--fs-13);
+  color: var(--muted);
+  font-weight: 600;
 }
 
 /* Card shell every bento section shares (replaces the borderless .finding-block
@@ -1419,9 +1454,9 @@ a:focus-visible,
 }
 
 .finding-card h2 {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   margin: 0 0 12px;
   font-weight: 700;
@@ -1444,6 +1479,19 @@ a:focus-visible,
   margin-bottom: 14px;
 }
 
+.finding-card.diagnosis-card .diagnosis-body {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+/* Full-width row of its own, centered on the page, instead of sharing a
+   row with the diagnosis card. */
+.finding-card.diagnosis-card,
+.finding-card.severity-meter-card {
+  grid-column: 1 / -1;
+}
+
 .finding-card.consequence-card h2 {
   color: var(--reject);
 }
@@ -1454,17 +1502,8 @@ a:focus-visible,
   margin: 0;
 }
 
-.finding-card.impact-card .impact-hero-primary {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.finding-card.diagnosis-card .diagnosis-body {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 14px;
+.finding-card .evidence-list {
+  padding: 0;
 }
 
 /* Severity spectrum — low to critical, marker shows where this finding sits */
@@ -1491,7 +1530,7 @@ a:focus-visible,
 .severity-meter-scale {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: var(--fs-11);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .04em;
@@ -1533,9 +1572,9 @@ a:focus-visible,
 }
 
 .finding-hero-meta-item .l {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   font-weight: 700;
 }
@@ -1601,9 +1640,9 @@ a:focus-visible,
 }
 
 .finding-block h2 {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   margin: 0 0 12px;
   font-weight: 700;
@@ -1659,59 +1698,64 @@ a:focus-visible,
 
 /* Inline collapsible receipts (How we computed / Evidence chain) — sit
    in the main column instead of a sidebar, closed by default so the
-   narrative reads uninterrupted for the 80% case that doesn't need them */
-details.inline-receipts {
+   narrative reads uninterrupted for the 80% case that doesn't need them.
+   The card's own 22px/24px padding is reset to 0 here so the pill header
+   and body share one consistent 16px inset instead of stacking two
+   different insets on top of each other. */
+.inline-receipts {
   margin-bottom: 24px;
+  padding: 16px;
 }
 
-details.inline-receipts>summary {
+.inline-receipts-summary {
+  display: block;
+  width: 100%;
+  text-align: left;
   cursor: pointer;
-  font-size: 12.5px;
+  font-family: inherit;
+  font-size: var(--fs-13);
   font-weight: 650;
   color: var(--muted);
-  list-style: none;
-  padding: 10px 14px;
+  padding: 12px 16px;
+  margin: -16px -16px 0;
   background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  transition: background .15s var(--ease);
+  border-radius: var(--radius);
+  transition: background .15s var(--ease), border-radius .15s var(--ease), color .15s var(--ease);
 }
 
-details.inline-receipts>summary::-webkit-details-marker {
-  display: none;
-}
-
-details.inline-receipts>summary::before {
+.inline-receipts-summary::before {
   content: "\002B";
   margin-right: 10px;
   color: var(--accent);
   font-weight: 800;
 }
 
-details.inline-receipts[open]>summary::before {
+.inline-receipts--open .inline-receipts-summary::before {
   content: "\002212";
 }
 
-details.inline-receipts>summary:hover {
+.inline-receipts-summary:hover {
   background: var(--surface-hover);
   color: var(--text);
 }
 
-details.inline-receipts[open]>summary {
-  margin-bottom: 12px;
+.inline-receipts--open .inline-receipts-summary {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
-details.inline-receipts>p {
+.inline-receipts-panel>p {
   font-size: var(--fs-13);
   line-height: 1.65;
   color: var(--muted);
-  padding: 0 14px;
   margin: 0;
+  padding: 16px 4px 4px;
 }
 
 .evidence-list {
   list-style: none;
-  padding: 0 14px;
+  padding: 16px 4px 4px;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -1796,9 +1840,9 @@ details.inline-receipts>p {
 }
 
 .fix-decision-label {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   font-weight: 700;
 }
@@ -1825,15 +1869,12 @@ details.inline-receipts>p {
   margin-bottom: 40px;
 }
 
-/* Decision panel — mirrors the Fix panel treatment (bordered card, no
-   top strip, pill badge only). Black pill instead of yellow so the
-   proposal/choice pairing reads as complementary. */
+/* Decision panel — no card, no box. Just the question and the two
+   glass verdict buttons, centered on the page; the reasoning step lives
+   entirely in a modal that only exists once you've picked one. */
 .decision-panel-wrap {
-  padding: 28px 30px 26px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  padding: 40px 20px 8px;
+  text-align: center;
 }
 
 .decision-panel-eyebrow {
@@ -1853,16 +1894,8 @@ details.inline-receipts>p {
   font: 550 var(--fs-16)/1.5 var(--font-body);
   color: var(--text);
   letter-spacing: -.005em;
-  margin: 0 0 20px;
+  margin: 0 auto 22px;
   max-width: 640px;
-}
-
-.decision-panel-wrap .decision {
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin-top: 0;
-  box-shadow: none;
 }
 
 
@@ -1936,9 +1969,9 @@ details.inline-receipts>p {
 }
 
 .block h2 {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   margin: 0 0 10px;
   font-weight: 700;
@@ -2167,9 +2200,9 @@ details.inline-receipts>p {
 }
 
 .severity-donut-card h2 {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   margin: 0 0 4px;
   font-weight: 700;
@@ -2210,7 +2243,7 @@ details.inline-receipts>p {
 }
 
 .severity-donut-center .l {
-  font-size: 10.5px;
+  font-size: var(--fs-11);
   color: var(--muted);
   font-weight: 600;
   text-transform: uppercase;
@@ -2286,7 +2319,7 @@ details.inline-receipts>p {
 }
 
 .compare-bars-label {
-  font-size: 11.5px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
   letter-spacing: .06em;
   color: var(--muted);
@@ -2340,16 +2373,119 @@ details.inline-receipts>p {
 }
 
 /* ---------------------------------------------------------------- decision gate */
-.decision {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  padding: 17px;
-  margin-top: 22px;
+.decision-choices {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 10px 0 40px;
 }
 
-.decision textarea {
+/* Same liquid-glass recipe as the "Ask Nexy" launcher (translucent
+   blurred surface, soft bevel), tinted red/green per verdict instead of
+   the neutral chrome — these two buttons ARE the decision, nothing else
+   commits until the modal's confirm step. */
+.decision-glass-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -.005em;
+  cursor: pointer;
+  transition: transform .15s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+}
+
+.decision-glass-btn:hover {
+  transform: translateY(-2px);
+}
+
+.decision-glass-btn:active {
+  transform: translateY(0) scale(.98);
+}
+
+.decision-glass-btn--reject {
+  background: rgba(216, 74, 58, .12);
+  border: 1px solid rgba(216, 74, 58, .3);
+  color: #b8382a;
+  box-shadow:
+    0 4px 16px rgba(216, 74, 58, .14),
+    inset 0 1px 1px rgba(255, 255, 255, .5);
+}
+
+.decision-glass-btn--reject:hover {
+  background: rgba(216, 74, 58, .18);
+  box-shadow:
+    0 8px 22px rgba(216, 74, 58, .22),
+    inset 0 1px 1px rgba(255, 255, 255, .5);
+}
+
+.decision-glass-btn--approve {
+  background: rgba(23, 134, 75, .12);
+  border: 1px solid rgba(23, 134, 75, .3);
+  color: #146b3d;
+  box-shadow:
+    0 4px 16px rgba(23, 134, 75, .14),
+    inset 0 1px 1px rgba(255, 255, 255, .5);
+}
+
+.decision-glass-btn--approve:hover {
+  background: rgba(23, 134, 75, .18);
+  box-shadow:
+    0 8px 22px rgba(23, 134, 75, .22),
+    inset 0 1px 1px rgba(255, 255, 255, .5);
+}
+
+/* the reasoning step — a floating modal, not part of the page at all
+   until a verdict is picked */
+.decision-modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(14, 14, 16, .32);
+  backdrop-filter: blur(3px);
+}
+
+.decision-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 71;
+  width: 440px;
+  max-width: calc(100vw - 32px);
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, .82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .6);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+}
+
+.decision-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-19);
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--text);
+  margin: 0 0 16px;
+}
+
+.decision-modal--reject .decision-modal-title {
+  color: #b8382a;
+}
+
+.decision-modal--approve .decision-modal-title {
+  color: #146b3d;
+}
+
+.decision-modal textarea {
   width: 100%;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
@@ -2357,27 +2493,27 @@ details.inline-receipts>p {
   font: inherit;
   font-size: 14px;
   resize: vertical;
-  min-height: 54px;
-  background: var(--bg);
+  min-height: 84px;
+  background: var(--surface);
   color: var(--text);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-.decision textarea::placeholder {
+.decision-modal textarea::placeholder {
   color: var(--text-tertiary);
 }
 
-.decision textarea:focus {
+.decision-modal textarea:focus {
   outline: none;
   border-color: var(--accent);
 }
 
-.decision .btns {
+.decision-modal-btns {
   display: flex;
   gap: 10px;
 }
 
-.btn {
+.btn-confirm {
   flex: 1;
   border: none;
   border-radius: var(--radius-sm);
@@ -2388,40 +2524,49 @@ details.inline-receipts>p {
   transition: filter .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease);
 }
 
-.btn:hover:not(:disabled) {
+.btn-confirm:hover:not(:disabled) {
   filter: brightness(.96);
-  box-shadow: var(--shadow-sm);
 }
 
-.btn:active:not(:disabled) {
+.btn-confirm:active:not(:disabled) {
   transform: scale(.98);
 }
 
-.btn.approve {
+.btn-confirm:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.btn-confirm.cancel {
+  background: var(--bg-subtle);
+  color: var(--muted);
+}
+
+.btn-confirm.cancel:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.btn-confirm.approve {
   background: var(--accent-gradient);
   color: var(--brand-ink);
   box-shadow: 0 4px 14px rgba(110, 86, 207, .28);
 }
 
-.btn.approve:hover:not(:disabled) {
+.btn-confirm.approve:hover:not(:disabled) {
   background: var(--accent-gradient-hover);
   box-shadow: 0 6px 20px rgba(232, 98, 143, .35);
   filter: none;
 }
 
-.btn.reject {
-  background: transparent;
-  color: var(--reject);
-  border: 1.5px solid #f4c6c0;
+.btn-confirm.reject {
+  background: var(--reject);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(216, 74, 58, .28);
 }
 
-.btn.reject:hover:not(:disabled) {
-  background: var(--reject-weak);
-}
-
-.btn:disabled {
-  opacity: .4;
-  cursor: default;
+.btn-confirm.reject:hover:not(:disabled) {
+  filter: brightness(.94);
 }
 
 .decided {
@@ -2429,6 +2574,8 @@ details.inline-receipts>p {
   font-size: 14px;
   padding: 14px;
   border-radius: var(--radius-sm);
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .decided.approved {
@@ -2535,9 +2682,9 @@ details.inline-receipts>p {
 }
 
 .metric-gauge-eyebrow {
-  font-size: 10px;
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: var(--subtitle-tracking);
   color: var(--muted);
   font-weight: 700;
   margin: 0 0 6px;
@@ -3356,7 +3503,7 @@ details.inline-receipts>p {
 /* ---- 2. Keyboard navigation (j / k / Enter) ---- */
 /* the row-level focus ring lives with the incidents table styles above;
    the shortcut legend itself now lives in the top nav (.topnav-shortcuts). */
-.incidents-table tbody tr:focus-visible {
+.issues-table tbody tr:focus-visible {
   outline: none;
 }
 

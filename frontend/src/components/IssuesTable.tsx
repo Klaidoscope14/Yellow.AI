@@ -24,7 +24,7 @@ interface ColumnDef {
 // stateful pills sized to their content.)
 const COLUMNS: ColumnDef[] = [
   { key: "severity", label: "Severity", width: 96, sortable: true },
-  { key: "title", label: "Incident", width: 340, sortable: false },
+  { key: "title", label: "Issue", width: 340, sortable: false },
   { key: "context", label: "Tenant · Intent", width: 190, sortable: true },
   { key: "status", label: "Status", width: 122, sortable: true },
   { key: "confidence", label: "Confidence", width: 100, sortable: true, align: "right" },
@@ -103,7 +103,7 @@ function sortRows(rows: Row[], key: SortKey, dir: SortDir): Row[] {
   });
 }
 
-export function IncidentsTable({ findings, report }: { findings: Finding[]; report: Report }) {
+export function IssuesTable({ findings, report }: { findings: Finding[]; report: Report }) {
   const nav = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>("severity");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -179,19 +179,19 @@ export function IncidentsTable({ findings, report }: { findings: Finding[]; repo
   if (findings.length === 0) {
     return (
       <p className="muted small" style={{ padding: "24px 4px" }}>
-        No incidents match this search.
+        No issues match this search.
       </p>
     );
   }
 
   return (
-    <div className="incidents-table-wrap">
+    <div className="issues-table-wrap">
       <div
-        className="incidents-table-scroll"
+        className="issues-table-scroll"
         ref={scrollRef}
         style={capPx != null ? { maxHeight: capPx } : undefined}
       >
-        <table className="incidents-table">
+        <table className="issues-table">
           <colgroup>
             {COLUMNS.map((c) => (
               <col key={c.key} style={{ width: widths[c.key] }} />

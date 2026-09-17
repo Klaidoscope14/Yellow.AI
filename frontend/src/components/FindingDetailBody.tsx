@@ -213,8 +213,8 @@ export function FindingDetailBody({
               verification.verdict === "improved"
                 ? "better"
                 : verification.verdict === "regressed"
-                ? "worse"
-                : "neutral"
+                  ? "worse"
+                  : "neutral"
             }
           />
           <p className="riskline">
@@ -233,9 +233,7 @@ export function FindingDetailBody({
       {prescription && (
         <section className="decision-panel-wrap">
           <p className="decision-panel-eyebrow">Decision</p>
-          <p className="decision-panel-lead">
-            Approve or reject. Your reason is recorded either way.
-          </p>
+
           <DecisionGate prescription={prescription} />
         </section>
       )}
