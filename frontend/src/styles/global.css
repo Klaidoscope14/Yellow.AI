@@ -69,8 +69,8 @@
      escalation still reads correctly at a glance, not just recolored */
   /* traffic-light escalation: bright red = most severe, bright green = least */
   --sev-critical: #ea1f1f;
-  --sev-high: #B000DC;
-  --sev-medium: #00B894;
+  --sev-high: #390909;
+  --sev-medium: #de5686;
   --sev-low: #1e7a34;
 
   /* semantic KPI palette — Nexus product uses lavender/green/yellow/red for
@@ -155,7 +155,7 @@ body {
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -10%;
   z-index: -1;
   pointer-events: none;
   background:
@@ -166,30 +166,74 @@ body::before {
     radial-gradient(ellipse 760px 640px at 104% 102%, rgba(200, 50, 185, .26), transparent 55%),
     radial-gradient(ellipse 560px 480px at 30% 98%, rgba(225, 45, 175, .20), transparent 55%),
     var(--bg);
-  /* oversized canvas so the drift below has room to pan without the
-     blobs' edges ever reaching the viewport */
-  background-size: 200% 200%;
-  background-position: 0% 0%;
   animation: bgDrift 28s ease-in-out infinite;
 }
 
-/* slow, ambient pan across the mesh — light and continuous, not a pulse */
+/* slow, ambient wobble -- a small transform on an oversized (-10% inset)
+   box, so every blob stays roughly where it's anchored instead of panning
+   fully off-screen (the old background-position trick with an oversized
+   background-size did exactly that: at the far end of its cycle nearly
+   every blob's anchor point landed outside the viewport at once). */
 @keyframes bgDrift {
-  0% {
-    background-position: 0% 0%;
+
+  0%,
+  100% {
+    transform: translate(0, 0);
   }
 
   50% {
-    background-position: 100% 100%;
-  }
-
-  100% {
-    background-position: 0% 0%;
+    transform: translate(-2.5%, 2.5%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   body::before {
+    animation: none;
+  }
+}
+
+/* ---- ambient particles: faint violet/magenta/pink flecks drifting
+   upward over the mesh gradient -- ported from the classic CSS-starfield
+   trick (hundreds of box-shadow dots on a 1px element, scrolled via
+   transform), recolored into this app's palette and toned way down. See
+   components/AmbientParticles.tsx. ---- */
+.ambient-particles {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambient-particles-layer {
+  position: absolute;
+  inset: 0;
+  animation-name: ambientDrift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.ambient-dot-field {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  border-radius: 50%;
+}
+
+@keyframes ambientDrift {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-2000px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-particles-layer {
     animation: none;
   }
 }
@@ -228,10 +272,12 @@ a:focus-visible,
   box-shadow: 0 0 0 4px var(--accent-weak);
 }
 
-/* ---------------------------------------------------------------- shell */
+/* ---------------------------------------------------------------- shell
+   No background here: an opaque fill on this normal-flow box would paint
+   in front of body::before's fixed gradient and .ambient-particles (both
+   z-index: -1), hiding them completely everywhere, not just under content. */
 .app-shell {
   min-height: 100vh;
-  background: var(--bg);
 }
 
 /* ---------------------------------------------------------------- top nav
@@ -260,19 +306,15 @@ a:focus-visible,
   display: flex;
   align-items: center;
   gap: 14px;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-/* NEXUS wordmark — rendered as SVG so it stays crisp at any size and
-   the ink color swaps cleanly with the theme. */
-.nexus-wordmark {
-  display: inline-flex;
-  align-items: center;
-  color: var(--ink);
-  line-height: 0;
-}
-
-.nexus-wordmark-svg {
+/* NEXUS logo lockup (icon + wordmark), background-removed PNG. */
+.nexus-logo {
   display: block;
+  height: 33px;
+  width: auto;
 }
 
 .topnav-brand-text {
@@ -425,7 +467,9 @@ a:focus-visible,
 }
 
 @keyframes liveBlink {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     box-shadow: 0 0 0 0 rgba(110, 86, 207, .5);
   }
@@ -1578,11 +1622,11 @@ a:focus-visible,
 }
 
 .finding-title {
-  font: 700 var(--fs-32)/1.2 var(--font-display);
-  letter-spacing: -.02em;
+  font: 650 var(--fs-24)/1.4 var(--font-display);
+  letter-spacing: -.01em;
   margin: 0 0 22px;
   color: var(--text);
-  max-width: 720px;
+  max-width: 780px;
 }
 
 .finding-hero-meta {

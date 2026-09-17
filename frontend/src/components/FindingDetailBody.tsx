@@ -54,7 +54,7 @@ export function FindingDetailBody({
           </div>
           {owner && (
             <div className="finding-hero-meta-item">
-              <span className="l">Owner</span>
+              <span className="l">Assigned team</span>
               <span className="v">{owner}</span>
             </div>
           )}
