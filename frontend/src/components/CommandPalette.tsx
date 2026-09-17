@@ -11,7 +11,7 @@ interface CmdItem {
 }
 
 /** Global ⌘K / Ctrl+K jump palette — fuzzy-free substring match over
- * issues and the four screens. Experiment #1. */
+ * incidents and the four screens. Experiment #1. */
 export function CommandPalette() {
   const { report } = useReport();
   const nav = useNavigate();
@@ -44,7 +44,7 @@ export function CommandPalette() {
 
   const items = useMemo<CmdItem[]>(() => {
     const staticItems: CmdItem[] = [
-      { label: "Go to Issues", action: () => nav("/") },
+      { label: "Go to Incidents", action: () => nav("/") },
       { label: "Go to Lookalikes", action: () => nav("/dismissed") },
       { label: "Go to Diagnostics", action: () => nav("/gaps") },
       { label: "Go to Decisions", action: () => nav("/decisions") },
@@ -82,7 +82,7 @@ export function CommandPalette() {
           <input
             autoFocus
             className="cmdk-input"
-            placeholder="Jump to an issue or screen&hellip;"
+            placeholder="Jump to an incident or screen&hellip;"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {

@@ -1,0 +1,51 @@
+# Nexus Loop - complete local application startup
+# Run each section in a separate PowerShell terminal.
+# Starting directory for every command:
+# C:\Users\Samsung\Desktop\nexus-loop-day1
+
+# 1. Move into the implementation root for Python services
+cd .\nexus-loop-day1
+
+# 2. Start the replay verification service on port 8719
+py .\tools\nexus-loop-kit\replay\serve.py --kit .\kit --port 8719
+
+# 3. Start the backend report service on port 8081
+# Run this in a second PowerShell terminal from the workspace root:
+cd C:\Users\Samsung\Desktop\nexus-loop-day1
+py .\nexus-loop-day1\service\service_backend.py
+
+# 4. Start the React/Vite frontend on port 4173
+# Run this in a third PowerShell terminal from the workspace root:
+cd C:\Users\Samsung\Desktop\nexus-loop-day1\frontend
+.\node_modules\.bin\vite.cmd --host 127.0.0.1 --port 4173
+
+# 5. Open the application
+Start-Process "http://127.0.0.1:4173/app/"
+
+# 6. Verify the services from the workspace root
+cd C:\Users\Samsung\Desktop\nexus-loop-day1
+Invoke-WebRequest http://127.0.0.1:8719/health -UseBasicParsing
+Invoke-WebRequest http://127.0.0.1:8081/health -UseBasicParsing
+Invoke-WebRequest http://127.0.0.1:8081/report -UseBasicParsing
+Invoke-WebRequest http://127.0.0.1:4173/app/ -UseBasicParsing
+
+# 7. Verify the frontend proxy reaches the backend report
+Invoke-WebRequest http://127.0.0.1:4173/report -UseBasicParsing
+
+# 8. Optional: run the pipeline and refresh the canonical report
+cd C:\Users\Samsung\Desktop\nexus-loop-day1\nexus-loop-day1
+py .\tools\nexus-loop-kit\pipeline.py `
+  --kit .\kit `
+  --team generalized-final-loop `
+  --out .\my-generalized-final-loop.json `
+  --replay-url http://127.0.0.1:8719 `
+  --score
+
+# 9. Optional: build the frontend
+cd C:\Users\Samsung\Desktop\nexus-loop-day1\frontend
+npm run build
+
+# 10. Stop services by port when finished
+Get-NetTCPConnection -LocalPort 4173,8081,8719 -State Listen -ErrorAction SilentlyContinue |
+  Select-Object -ExpandProperty OwningProcess -Unique |
+  ForEach-Object { Stop-Process -Id $_ -Force }
