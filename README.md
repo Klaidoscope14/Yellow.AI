@@ -19,13 +19,27 @@ Our system is divided into three distinct operational layers, wrapped together b
 - Node.js (for the frontend)
 - The dataset (`nexus-loop-kit`) located at `Nexus-Loop/kit`
 
-## How to Run
-
-We have provided a unified Python script to safely spin up the entire multi-service architecture locally. It automatically cleans up any orphaned ports, starts the Replay Service, AI/ML layer, Backend, and Frontend, and automatically generates the initial `loop-report.json`.
-
-Run the following command from the root of the repository:
+## Setup (one-time)
 
 ```bash
+# 1. Python virtual env + backend/ai-ml deps (includes psutil, used by run_all.py
+#    to kill orphaned processes on our ports before (re)starting)
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# 2. Frontend deps
+cd frontend && npm install && cd ..
+```
+
+## How to Run
+
+We have provided a unified Python script to safely spin up the entire multi-service architecture locally. It automatically kills any orphaned processes still holding our ports, starts the Replay Service, AI/ML layer, Backend, and Frontend, and automatically generates the initial `loop-report.json`.
+
+Run the following command from the root of the repository, with the venv activated:
+
+```bash
+source .venv/bin/activate   # if not already active
 python run_all.py
 ```
 
@@ -33,6 +47,52 @@ python run_all.py
 - **Backend API**: http://127.0.0.1:8801
 - **AI/ML API**: http://127.0.0.1:8802
 - **Replay Service**: http://127.0.0.1:8719
+
+**Wait ~20-30 seconds after launching** before opening the frontend. The backend
+imports DuckDB and computes the first full metrics pass (`/report`) on first
+request. You can just open the page right away, though — the frontend now
+shows a loading spinner ("Starting services…") and auto-retries the report
+fetch for up to ~40s instead of immediately showing an error, so it recovers
+on its own once the backend finishes booting. If it's still failing after
+that window, a **Retry** button and the actual error message are shown —
+that's the point to move to the troubleshooting steps below.
+
+### If it fails to start / "Failed to load report" (demo troubleshooting)
+
+The most common cause is **stale processes from a previous run still holding
+the ports** — `python run_all.py` was already run once (e.g. earlier in the
+day, or a prior terminal that was closed without stopping it) and the old
+Replay/AI-ML/Backend servers are still bound to 8719/8802/8801/5173. The new
+run then fails to bind those ports, the frontend still comes up (on 5173 or a
+fallback port like 5174), but it's pointed at a dead or half-started backend
+-> **HTTP 500**.
+
+`run_all.py` now cleans this up automatically on every run (via `lsof`, no
+sudo needed on macOS/Linux). If you still hit issues:
+
+1. **Kill anything on our ports manually, then retry:**
+   ```bash
+   for p in 8719 8802 8801 5173 5174; do lsof -ti tcp:$p | xargs -r kill -9; done
+   python run_all.py
+   ```
+2. **Check each service came up**, from another terminal:
+   ```bash
+   curl -s -o /dev/null -w "Replay:%{http_code}\n"  http://127.0.0.1:8719/
+   curl -s -o /dev/null -w "AIML:%{http_code}\n"    http://127.0.0.1:8802/
+   curl -s -o /dev/null -w "Backend:%{http_code}\n" http://127.0.0.1:8801/report
+   curl -s -o /dev/null -w "Frontend:%{http_code}\n" http://localhost:5173/app/
+   ```
+   Replay/AI-ML return `404` on `/` (that's fine, they have no root route —
+   just means the server is up). Backend `/report` and the frontend should
+   both return `200`.
+3. **Only one instance of `run_all.py` at a time.** Don't run it again in a
+   new terminal to "restart" — stop the existing one first (`Ctrl+C` in the
+   terminal running it, which also shuts down all 4 child services), *then*
+   re-run.
+4. **Before a live demo**, do a clean dry run 5-10 minutes ahead of time:
+   kill stale ports (step 1), start `run_all.py`, wait 30s, and confirm the
+   frontend loads the report end-to-end. Leave that instance running for the
+   actual demo rather than restarting right before you go on.
 
 ## Key Features
 

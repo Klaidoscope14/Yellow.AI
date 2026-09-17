@@ -7,19 +7,34 @@ import json
 
 root = os.path.dirname(os.path.abspath(__file__))
 
-# Clean up any orphaned ports before starting
+# Clean up any orphaned ports before starting.
+# NOTE: psutil.net_connections() requires root on macOS (raises
+# AccessDenied) and is unreliable cross-platform, so we shell out to
+# lsof/netstat instead, which works unprivileged on macOS/Linux/WSL.
 ports = [8719, 8802, 8801, 5173]
-try:
-    import psutil
-    print("Killing existing processes on ports 8719, 8802, 8801, 5173...")
-    for conn in psutil.net_connections():
-        if conn.laddr.port in ports and conn.pid:
-            try:
-                psutil.Process(conn.pid).terminate()
-            except:
-                pass
-except ImportError:
-    pass
+print(f"Killing existing processes on ports {ports}...")
+for port in ports:
+    try:
+        if os.name == "nt":
+            out = subprocess.run(
+                ["netstat", "-ano"], capture_output=True, text=True
+            ).stdout
+            pids = {
+                line.split()[-1]
+                for line in out.splitlines()
+                if f":{port} " in line and "LISTENING" in line
+            }
+            for pid in pids:
+                subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
+        else:
+            out = subprocess.run(
+                ["lsof", "-ti", f"tcp:{port}"], capture_output=True, text=True
+            ).stdout
+            for pid in out.split():
+                subprocess.run(["kill", "-9", pid], capture_output=True)
+    except Exception as e:
+        print(f"  (could not clean port {port}: {e})")
+time.sleep(1)
 
 env = os.environ.copy()
 env["NEXUS_DATA_DIR"] = os.path.join(root, "Nexus-Loop", "kit", "corpus")
