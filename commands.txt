@@ -1,7 +1,7 @@
 # Nexus Loop - complete local application startup
 # Run each section in a separate PowerShell terminal.
 # Starting directory for every command:
-# C:\Users\Samsung\Desktop\nexus-loop-day1
+# C:\Users\Samsung\Desktop\nexus-loop-day1 or our parent dir
 
 # 1. Move into the implementation root for Python services
 cd .\nexus-loop-day1
